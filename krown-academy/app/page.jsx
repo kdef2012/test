@@ -730,7 +730,7 @@ function Enrollment({ setActiveForm }) {
         <div>
           <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>How to Enroll</h3>
           {[
-            { n: "1", t: "Contact Kendall", d: "Call or text 336-500-4765 or email krownacademynelson@gmail.com. I&apos;ll answer every question personally." },
+            { n: "1", t: "Contact Kendall", d: "Call or text 336-500-4765 or email knelson@krownacademy.org. I&apos;ll answer every question personally." },
             { n: "2", t: "Complete the Online Enrollment Form", d: "Fill out the enrollment application below. I&apos;ll walk you through every step." },
             { n: "3", t: "Apply for Opportunity Scholarship", d: "I help every family apply. Most families pay $0 tuition. Link below." },
             { n: "4", t: "Submit Required Documents", d: "Student info form, medical clearance, immunization records, device agreement. All available as online forms." },
@@ -900,7 +900,7 @@ function Contact() {
           </p>
           {[
             ["Phone / Text", "336-500-4765"],
-            ["Email", "krownacademynelson@gmail.com"],
+            ["Email", "knelson@krownacademy.org"],
             ["Location", "Winston-Salem / Kernersville, NC"],
             ["Hours", "Available 7 AM – 9 PM, 7 days a week"],
           ].map(([label, val]) => (
