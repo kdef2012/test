@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../utils/supabase';
 
@@ -191,6 +191,13 @@ function FormModal({ activeForm, setActiveForm }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    if (activeForm) {
+      setSuccess(false);
+      setIsSubmitting(false);
+    }
+  }, [activeForm]);
+
   if (!activeForm || !FORMS[activeForm]) return null;
   const form = FORMS[activeForm];
 
@@ -338,7 +345,7 @@ function Hero() {
         </p>
         <div className="flex flex-wrap gap-4 mb-16">
           <Button href="#enrollment">Enroll Your King or Queen</Button>
-          <Button href="#about" variant="outline">Learn Our Story</Button>
+          <Button href="#ourstory" variant="outline">Learn Our Story</Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 32 }}>
           <StatBox num="15:1" label="Student Ratio" />
@@ -357,7 +364,7 @@ function Hero() {
 // ABOUT
 function About() {
   return (
-    <Section id="about" bg={COLORS.offWhite}>
+    <Section id="ourstory" bg={COLORS.offWhite}>
       <SectionTitle sub="Our Story">Bring Me Metal. I&apos;ll Make You a Hammer.</SectionTitle>
       <div className="grid md:grid-cols-2 gap-12 items-start">
         <div>
