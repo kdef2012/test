@@ -817,8 +817,8 @@ function Parents() {
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         {[
           { t: "Parent Portal (Gradelink)", d: "View grades, attendance, handle billing, pay fines/fees, and purchase school merchandise.", link: "https://secure.gradelink.com/lkg/Gradelink.xml?contenttype=text%2Fhtml&Language=English&v=1.0" },
-          { t: "School Handbook", d: "Complete guide to Krown Academy policies, schedules, grading, discipline, and expectations.", link: "/14_School_Handbook.pdf" },
-          { t: "Frequently Asked Questions", d: "Answers to the 11 most common questions from parents about Krown Academy.", link: "/15_Parent_FAQ.pdf" },
+          { t: "School Handbook", d: "Complete guide to Krown Academy policies, schedules, grading, discipline, and expectations.", link: "/handbook" },
+          { t: "Frequently Asked Questions", d: "Answers to the 11 most common questions from parents about Krown Academy.", link: "/faq" },
         ].map(({ t, d, link }) => (
           <a key={t} href={link} target="_blank" rel="noopener noreferrer" style={{ background: COLORS.white, borderRadius: 12, padding: 24, textDecoration: "none", boxShadow: "0 2px 16px rgba(0,0,0,0.05)", display: "block", transition: "transform 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
