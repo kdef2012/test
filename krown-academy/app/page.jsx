@@ -308,9 +308,6 @@ function Nav({ active, setActive }) {
           <a href="/calendar" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
             Calendar
           </a>
-          <a href="https://krownacademy.myshopify.com" target="_blank" rel="noopener noreferrer" style={{ background: COLORS.gold, color: COLORS.black, fontSize: 13, fontWeight: 800, padding: "8px 16px", borderRadius: 8, textDecoration: "none", transition: "transform 0.2s", letterSpacing: 1, whiteSpace: "nowrap" }}>
-            KROWN STORE
-          </a>
         </div>
         <button className="lg:hidden" onClick={() => setOpen(!open)} style={{ background: "none", border: "none", color: COLORS.white, fontSize: 24, cursor: "pointer" }}>
           {open ? "\u2715" : "\u2630"}
@@ -328,9 +325,6 @@ function Nav({ active, setActive }) {
           ))}
           <a href="/calendar" style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             Calendar
-          </a>
-          <a href="https://krownacademy.myshopify.com" target="_blank" rel="noopener noreferrer" style={{ background: COLORS.gold, color: COLORS.black, padding: "12px 32px", borderRadius: 8, fontSize: 16, fontWeight: 800, textDecoration: "none", marginTop: 12 }}>
-            KROWN STORE
           </a>
         </div>
       )}
