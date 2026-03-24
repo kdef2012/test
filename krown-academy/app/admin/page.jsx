@@ -106,9 +106,9 @@ export default function AdminPortal() {
       <div style={{ flex: 1, padding: "40px 60px", marginLeft: 280 }}>
         {activeTab === "Dashboard" && <DashboardView applications={applications} students={students} />}
         {activeTab === "Applications" && <ApplicationsView applications={applications} fetchData={fetchData} />}
-        {activeTab === "Students" && <StudentsView students={students} fetchData={fetchData} />}
+        {activeTab === "Students" && <StudentsView students={students} applications={applications} fetchData={fetchData} />}
         {activeTab === "Mentoring" && <MentoringView students={students} logs={logs} fetchData={fetchData} />}
-        {activeTab === "Emergencies" && <EmergenciesView students={students} />}
+        {activeTab === "Emergencies" && <EmergenciesView students={students} applications={applications} />}
       </div>
     </div>
   );
@@ -253,10 +253,20 @@ function ApplicationsView({ applications, fetchData }) {
 }
 
 // --------------------------------------------------------------------------------
-// 3. STUDENTS VIEW (Degree Audit Builder)
+// 3. STUDENTS VIEW (Degree Audit Builder & Digital File)
 // --------------------------------------------------------------------------------
-function StudentsView({ students, fetchData }) {
+function StudentsView({ students, applications, fetchData }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [gradeFilter, setGradeFilter] = useState("All");
+  const [viewingForm, setViewingForm] = useState(null);
+
+  const filteredStudents = students.filter(s => gradeFilter === "All" || s.grade === gradeFilter);
+  
+  // Find applications assigned to this student name (fuzzy matching)
+  const studentForms = selectedStudent ? applications.filter(a => {
+     const n = (a.data["Student Full Name"] || a.data["Full Name"] || "").toLowerCase();
+     return n && selectedStudent.name.toLowerCase().includes(n);
+  }) : [];
   
   const toggleClass = async (className) => {
     if (!selectedStudent) return;
@@ -275,7 +285,6 @@ function StudentsView({ students, fetchData }) {
     }
     
     const earned = newTaken.length;
-    // Fast optimistic UI update
     setSelectedStudent({...selectedStudent, taken: newTaken, needed: newNeeded, credits_earned: earned});
     
     await supabase.from('students').update({
@@ -287,17 +296,27 @@ function StudentsView({ students, fetchData }) {
 
   return (
     <div style={{ display: "flex", gap: 32 }}>
+       {/* Roster with Grade Filter */}
        <div style={{ width: 300, display: "flex", flexDirection: "column", gap: 12 }}>
-         <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Roster</h3>
-         {students.map(s => (
-           <div key={s.id} onClick={() => setSelectedStudent(s)} style={{ padding: 16, borderRadius: 8, background: selectedStudent?.id === s.id ? COLORS.red : COLORS.white, color: selectedStudent?.id === s.id ? COLORS.white : COLORS.black, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", transition: "all 0.2s" }}>
-             <div style={{ fontWeight: 700, fontSize: 16 }}>{s.name}</div>
-             <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>ID: {s.id} &bull; {s.grade}</div>
-           </div>
-         ))}
+         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+           <h3 style={{ fontSize: 20, fontWeight: 800 }}>Roster</h3>
+           <select value={gradeFilter} onChange={e => { setGradeFilter(e.target.value); setSelectedStudent(null); }} style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, fontSize: 12, fontWeight: 700, outline: "none", cursor: "pointer" }}>
+             <option value="All">All Grades</option>
+             {Array.from(new Set(students.map(s => s.grade))).sort().map(g => <option key={g} value={g}>{g}</option>)}
+           </select>
+         </div>
+         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "80vh", overflowY: "auto", paddingRight: 8 }}>
+           {filteredStudents.map(s => (
+             <div key={s.id} onClick={() => setSelectedStudent(s)} style={{ padding: 16, borderRadius: 8, background: selectedStudent?.id === s.id ? COLORS.red : COLORS.white, color: selectedStudent?.id === s.id ? COLORS.white : COLORS.black, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.03)", transition: "all 0.2s" }}>
+               <div style={{ fontWeight: 700, fontSize: 16 }}>{s.name}</div>
+               <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>ID: {s.id} &bull; {s.grade}</div>
+             </div>
+           ))}
+           {filteredStudents.length === 0 && <div style={{ fontSize: 13, color: COLORS.textMuted, textAlign: "center", padding: 20 }}>No students in this grade.</div>}
+         </div>
        </div>
 
-       <div style={{ flex: 1, background: COLORS.white, borderRadius: 12, padding: 40, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+       <div style={{ flex: 1, background: COLORS.white, borderRadius: 12, padding: 40, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", maxHeight: "90vh", overflowY: "auto" }}>
           {selectedStudent ? (
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 24, marginBottom: 24 }}>
@@ -309,6 +328,22 @@ function StudentsView({ students, fetchData }) {
                   <div style={{ fontSize: 36, fontWeight: 900, color: COLORS.gold, lineHeight: 1 }}>{selectedStudent.credits_earned}</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1 }}>Credits Earned</div>
                 </div>
+              </div>
+
+              {/* Digital File: Past Forms */}
+              <div style={{ marginBottom: 32, background: COLORS.offWhite, padding: 24, borderRadius: 12, border: `1px solid ${COLORS.lightGray}` }}>
+                 <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Student Digital File (Submitted Forms)</h3>
+                 {studentForms.length > 0 ? (
+                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                     {studentForms.map(form => (
+                       <button key={form.id} onClick={() => setViewingForm(form)} style={{ padding: "8px 16px", background: COLORS.white, border: `1px solid ${COLORS.red}`, color: COLORS.red, borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                         📄 {form.form_type}
+                       </button>
+                     ))}
+                   </div>
+                 ) : (
+                   <div style={{ fontSize: 13, color: COLORS.textMuted }}>No submitted applications firmly matching this student's name found in the database.</div>
+                 )}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
@@ -343,6 +378,49 @@ function StudentsView({ students, fetchData }) {
             <div style={{ color: COLORS.textMuted, textAlign: "center", paddingTop: 100 }}>Select a student to manage their Degree Audit.</div>
           )}
        </div>
+
+       {/* PDF Print Modal Overlay */}
+       {viewingForm && (
+         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+           <div style={{ background: COLORS.white, width: "100%", maxWidth: 700, borderRadius: 12, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+             <div style={{ padding: "20px 32px", background: COLORS.black, color: COLORS.white, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+               <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{viewingForm.form_type} - PDF View</h2>
+               <button onClick={() => setViewingForm(null)} style={{ background: "none", border: "none", color: COLORS.white, fontSize: 24, cursor: "pointer" }}>&times;</button>
+             </div>
+             <div style={{ flex: 1, padding: 40, overflowY: "auto", background: COLORS.white }} id="printable-form-area">
+               <div style={{ textAlign: "center", marginBottom: 32, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 24 }}>
+                 <div style={{ fontFamily: "'Cinzel', serif", fontSize: 24, fontWeight: 800, letterSpacing: 2 }}>KROWN ACADEMY</div>
+                 <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4, textTransform: "uppercase", letterSpacing: 1 }}>Official Digital Record</div>
+               </div>
+               <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, color: COLORS.black }}>{viewingForm.form_type}</h1>
+               <div style={{ fontSize: 14, color: COLORS.textMuted, marginBottom: 32 }}>Submitted on: {new Date(viewingForm.submitted_at).toLocaleString()}</div>
+               {Object.entries(viewingForm.data).map(([k, v]) => (
+                 <div key={k} style={{ marginBottom: 20 }}>
+                   <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{k}</div>
+                   <div style={{ fontSize: 16, fontWeight: 500, color: COLORS.black, paddingBottom: 8, borderBottom: `1px solid ${COLORS.lightGray}` }}>{v || "N/A"}</div>
+                 </div>
+               ))}
+             </div>
+             <div style={{ borderTop: `1px solid ${COLORS.lightGray}`, padding: 24, background: COLORS.offWhite, display: "flex", justifyContent: "flex-end", gap: 16 }}>
+               <button onClick={() => setViewingForm(null)} style={{ padding: "10px 20px", fontWeight: 600, background: "transparent", border: `2px solid ${COLORS.lightGray}`, borderRadius: 8, cursor: "pointer" }}>Close</button>
+               <button onClick={() => {
+                 const printWindow = window.open('', '_blank');
+                 printWindow.document.write('<html><head><title>Print Form</title><style>body { font-family: sans-serif; padding: 40px; color: #000; } .line { border-bottom: 1px solid #ccc; margin-bottom: 20px; padding-bottom: 8px; } .label { font-size: 11px; text-transform: uppercase; color: #666; margin-bottom: 4px; font-weight: bold; } .value { font-size: 15px; }</style></head><body>');
+                 printWindow.document.write('<div style="text-align:center;margin-bottom:40px;border-bottom:2px solid #000;padding-bottom:20px;"><div style="font-family:serif;font-size:24px;font-weight:bold;letter-spacing:2px;">KROWN ACADEMY</div><div style="font-size:12px;color:#666;margin-top:4px;">OFFICIAL DIGITAL RECORD</div></div>');
+                 printWindow.document.write('<h2 style="margin-bottom:8px;">' + viewingForm.form_type + '</h2>');
+                 printWindow.document.write('<p style="color:#666;font-size:13px;margin-bottom:32px;">Submitted: ' + new Date(viewingForm.submitted_at).toLocaleString() + '</p>');
+                 Object.entries(viewingForm.data).forEach(([k,v]) => {
+                   printWindow.document.write('<div class="line"><div class="label">' + k + '</div><div class="value">' + (v || "N/A") + '</div></div>');
+                 });
+                 printWindow.document.write('</body></html>');
+                 printWindow.document.close();
+                 printWindow.focus();
+                 setTimeout(() => { printWindow.print(); }, 250);
+               }} style={{ padding: "10px 20px", fontWeight: 700, background: COLORS.black, color: COLORS.white, border: "none", borderRadius: 8, cursor: "pointer" }}>🖨️ Print Document to PDF</button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }
@@ -410,9 +488,16 @@ function MentoringView({ students, logs, fetchData }) {
 // --------------------------------------------------------------------------------
 // 5. EMERGENCIES (Quick Search)
 // --------------------------------------------------------------------------------
-function EmergenciesView({ students }) {
+function EmergenciesView({ students, applications }) {
   const [search, setSearch] = useState("");
+  const [viewingForm, setViewingForm] = useState(null);
+
   const filtered = students.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || (s.medical_alerts && s.medical_alerts.toLowerCase().includes(search.toLowerCase())));
+
+  // Fuzzy match applications for emergency view
+  const findMedicalForm = (studentName) => {
+     return applications.find(a => a.form_type.includes("Medical") && (a.data["Student Full Name"] || a.data["Full Name"] || "").toLowerCase().includes(studentName.toLowerCase()));
+  };
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -422,25 +507,61 @@ function EmergenciesView({ students }) {
       <input type="text" placeholder="Search by student name or medical condition (e.g. Asthma)..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: 20, borderRadius: 12, border: `2px solid ${COLORS.red}`, fontSize: 18, marginBottom: 40, outline: "none", boxShadow: "0 4px 20px rgba(196,30,30,0.1)" }} />
       
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {filtered.map(s => (
-          <div key={s.id} style={{ background: COLORS.white, padding: 24, borderRadius: 12, borderLeft: `6px solid ${s.medical_alerts !== 'None' ? COLORS.red : COLORS.black}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <h3 style={{ fontSize: 24, fontWeight: 800 }}>{s.name}</h3>
-              <div style={{ fontWeight: 700, fontSize: 14, padding: "6px 12px", background: COLORS.offWhite, borderRadius: 6 }}>ID: {s.id}</div>
-            </div>
-            <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div>
-                <div style={{ fontSize: 12, textTransform: "uppercase", fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, marginBottom: 4 }}>Medical Alerts / Conditions</div>
-                <div style={{ fontSize: 16, color: s.medical_alerts !== 'None' ? COLORS.red : COLORS.black, fontWeight: s.medical_alerts !== 'None' ? 800 : 500 }}>{s.medical_alerts || 'None'}</div>
+        {filtered.map(s => {
+          const medForm = findMedicalForm(s.name);
+          return (
+            <div key={s.id} style={{ background: COLORS.white, padding: 24, borderRadius: 12, borderLeft: `6px solid ${s.medical_alerts !== 'None' ? COLORS.red : COLORS.black}`, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <h3 style={{ fontSize: 24, fontWeight: 800 }}>{s.name}</h3>
+                <div style={{ fontWeight: 700, fontSize: 14, padding: "6px 12px", background: COLORS.offWhite, borderRadius: 6 }}>ID: {s.id}</div>
               </div>
-              <div>
-                <div style={{ fontSize: 12, textTransform: "uppercase", fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, marginBottom: 4 }}>Emergency Actions</div>
-                <a href={`/admin`} onClick={e => { e.preventDefault(); alert("In a full build, this would fetch guardian info from the applications table!"); }} style={{ color: COLORS.gold, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>View Parent Forms</a>
+              <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 12, textTransform: "uppercase", fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, marginBottom: 4 }}>Medical Alerts / Conditions</div>
+                  <div style={{ fontSize: 16, color: s.medical_alerts !== 'None' ? COLORS.red : COLORS.black, fontWeight: s.medical_alerts !== 'None' ? 800 : 500 }}>{s.medical_alerts || 'None'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, textTransform: "uppercase", fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, marginBottom: 4 }}>Emergency Actions</div>
+                  {medForm ? (
+                     <button onClick={() => setViewingForm(medForm)} style={{ background: "none", border: "none", color: COLORS.gold, fontWeight: 800, textDecoration: "underline", cursor: "pointer", fontSize: 15, padding: 0 }}>
+                       📄 View Parent Medical Form
+                     </button>
+                  ) : (
+                     <div style={{ fontSize: 13, color: COLORS.textMuted }}>No Medical Record mapped to this name.</div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
+
+       {/* PDF Print Modal Overlay */}
+       {viewingForm && (
+         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+           <div style={{ background: COLORS.white, width: "100%", maxWidth: 700, borderRadius: 12, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+             <div style={{ padding: "20px 32px", background: COLORS.black, color: COLORS.white, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+               <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{viewingForm.form_type} - PDF View</h2>
+               <button onClick={() => setViewingForm(null)} style={{ background: "none", border: "none", color: COLORS.white, fontSize: 24, cursor: "pointer" }}>&times;</button>
+             </div>
+             <div style={{ flex: 1, padding: 40, overflowY: "auto", background: COLORS.white }} id="printable-form-area-emerg">
+               <div style={{ textAlign: "center", marginBottom: 32, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 24 }}>
+                 <div style={{ fontFamily: "'Cinzel', serif", fontSize: 24, fontWeight: 800, letterSpacing: 2 }}>KROWN ACADEMY</div>
+               </div>
+               <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, color: COLORS.black }}>{viewingForm.form_type}</h1>
+               {Object.entries(viewingForm.data).map(([k, v]) => (
+                 <div key={k} style={{ marginBottom: 20 }}>
+                   <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{k}</div>
+                   <div style={{ fontSize: 16, fontWeight: 500, color: COLORS.black, paddingBottom: 8, borderBottom: `1px solid ${COLORS.lightGray}` }}>{v || "N/A"}</div>
+                 </div>
+               ))}
+             </div>
+             <div style={{ borderTop: `1px solid ${COLORS.lightGray}`, padding: 24, background: COLORS.offWhite, display: "flex", justifyContent: "flex-end" }}>
+               <button onClick={() => setViewingForm(null)} style={{ padding: "10px 20px", fontWeight: 600, background: "transparent", border: `2px solid ${COLORS.lightGray}`, borderRadius: 8, cursor: "pointer" }}>Close Document</button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }
