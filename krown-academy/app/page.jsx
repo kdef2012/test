@@ -299,12 +299,18 @@ function Nav({ active, setActive }) {
         
         {/* Desktop Nav */}
         <div className="hidden lg:flex gap-2 lg:gap-4 items-center">
-          {["Our Story", "Academics", "Curriculum", "Athletics", "Mentoring", "Enrollment", "Scholarships", "Parents", "Careers", "Contact"].map(item => (
+          {["Our Story", "Academics", "Curriculum", "Athletics", "Mentoring", "Enrollment", "Scholarships", "Parents"].map(item => (
             <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '')}`} onClick={e => { e.preventDefault(); setActive(item); document.getElementById(item.toLowerCase().replace(/\s/g, ''))?.scrollIntoView({behavior:"smooth"}); }}
               style={{ color: active === item ? COLORS.gold : "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
               {item}
             </a>
           ))}
+          <a href="/calendar" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
+            Calendar
+          </a>
+          <a href="https://krownacademy.myshopify.com" target="_blank" rel="noopener noreferrer" style={{ background: COLORS.gold, color: COLORS.black, fontSize: 13, fontWeight: 800, padding: "8px 16px", borderRadius: 8, textDecoration: "none", transition: "transform 0.2s", letterSpacing: 1, whiteSpace: "nowrap" }}>
+            KROWN STORE
+          </a>
         </div>
         <button className="lg:hidden" onClick={() => setOpen(!open)} style={{ background: "none", border: "none", color: COLORS.white, fontSize: 24, cursor: "pointer" }}>
           {open ? "\u2715" : "\u2630"}
@@ -314,12 +320,18 @@ function Nav({ active, setActive }) {
       {/* Mobile Menu */}
       {open && (
         <div className="absolute top-24 left-0 w-full bg-black flex flex-col items-center py-6 gap-6 lg:hidden border-t border-gray-800 h-screen overflow-y-auto pb-32">
-          {["Our Story", "Academics", "Curriculum", "Athletics", "Mentoring", "Enrollment", "Scholarships", "Parents", "Careers", "Contact"].map(item => (
+          {["Our Story", "Academics", "Curriculum", "Athletics", "Mentoring", "Enrollment", "Scholarships", "Parents"].map(item => (
             <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '')}`} onClick={e => { e.preventDefault(); setActive(item); setOpen(false); document.getElementById(item.toLowerCase().replace(/\s/g, ''))?.scrollIntoView({behavior:"smooth"}); }}
               style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               {item}
             </a>
           ))}
+          <a href="/calendar" style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            Calendar
+          </a>
+          <a href="https://krownacademy.myshopify.com" target="_blank" rel="noopener noreferrer" style={{ background: COLORS.gold, color: COLORS.black, padding: "12px 32px", borderRadius: 8, fontSize: 16, fontWeight: 800, textDecoration: "none", marginTop: 12 }}>
+            KROWN STORE
+          </a>
         </div>
       )}
     </nav>
