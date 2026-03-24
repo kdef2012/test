@@ -73,9 +73,6 @@ export default function Calendar() {
           <div style={{ fontFamily: "'Cinzel', serif", fontSize: 22, fontWeight: 800, color: COLORS.gold, letterSpacing: 2 }}>KROWN ACADEMY</div>
         </div>
         <div style={{ display: "flex", gap: 16 }}>
-          <a href="https://krownacademy.myshopify.com" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.black, textDecoration: "none", fontWeight: 800, padding: "10px 20px", background: COLORS.gold, borderRadius: 8 }}>
-            KROWN STORE
-          </a>
           <a href="/" style={{ color: COLORS.white, textDecoration: "none", fontWeight: 700, padding: "10px 20px", background: COLORS.red, borderRadius: 8 }}>
             Back to Website
           </a>
