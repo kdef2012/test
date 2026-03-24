@@ -955,10 +955,26 @@ function Footer() {
               Winston-Salem / Kernersville, NC
             </p>
           </div>
-          <div>
-            <h4 style={{ color: COLORS.gold, fontSize: 12, fontWeight: 700, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" }}>Quick Links</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-start" }}>
+            <h4 style={{ color: COLORS.gold, fontSize: 13, fontWeight: 800, letterSpacing: 2, marginBottom: 16, textTransform: "uppercase" }}>Quick Links</h4>
             {["Enrollment", "Scholarships", "Academics", "Athletics", "Contact"].map(l => (
-              <a key={l} href={`#${l.toLowerCase()}`} style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: 13, padding: "4px 0", textDecoration: "none" }}>{l}</a>
+              <a key={l} href={`#${l.toLowerCase()}`} style={{ 
+                display: "inline-block", 
+                background: "rgba(196,30,30,0.15)", // red tint
+                color: COLORS.white, 
+                fontSize: 14, 
+                fontWeight: 700,
+                padding: "12px 24px", 
+                borderRadius: 8, 
+                textDecoration: "none",
+                borderLeft: `4px solid ${COLORS.red}`,
+                transition: "all 0.2s",
+                width: "auto"
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = COLORS.red; e.currentTarget.style.transform = "translateX(10px)"; e.currentTarget.style.color = COLORS.white; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(196,30,30,0.15)"; e.currentTarget.style.transform = "none"; }}>
+                {l} &rarr;
+              </a>
             ))}
           </div>
           <div>
