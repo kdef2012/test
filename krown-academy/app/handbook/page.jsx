@@ -41,7 +41,7 @@ export default function Handbook() {
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>
             KINGS & QUEENS | "Earn Your Krown"<br/>
             A Program of KVegas Elite Inc (501(c)(3)) | Managed by KD THRILL LLC<br/>
-            Kendall Nelson, Founder | 336-500-4765 | krownacademynelson@gmail.com
+            Kendall Nelson, Founder | 336-500-4765 | knelson@krownacademy.org
           </p>
         </div>
 
