@@ -945,11 +945,11 @@ function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid sm:grid-cols-3 gap-8 mb-8">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <img src="/Krown_Academy_New_Logo.png.png" alt="Krown Academy Logo" style={{ height: 75, width: "auto" }} />
-              <span style={{ color: COLORS.white, fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: 20, letterSpacing: 2 }}>KROWN ACADEMY</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
+              <img src="/Krown_Academy_New_Logo.png.png" alt="Krown Academy Logo" style={{ height: 110, width: "auto" }} />
+              <span style={{ color: COLORS.white, fontFamily: "'Cinzel', serif", fontWeight: 800, fontSize: 26, letterSpacing: 2, lineHeight: 1.2 }}>KROWN<br/>ACADEMY</span>
             </div>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, lineHeight: 1.7 }}>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.8 }}>
               A program of KVegas Elite Inc (501(c)(3))<br />
               Managed by KD THRILL LLC<br />
               Winston-Salem / Kernersville, NC
