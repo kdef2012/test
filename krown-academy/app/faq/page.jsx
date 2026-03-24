@@ -57,7 +57,7 @@ const FAQ_DATA = [
   },
   {
     q: "How do I enroll?",
-    a: "Call or text me at 336-500-4765 or email krownacademynelson@gmail.com. I walk you through everything."
+    a: "Call or text me at 336-500-4765 or email knelson@krownacademy.org. I walk you through everything."
   }
 ];
 
@@ -127,7 +127,7 @@ export default function FAQ() {
             <a href="tel:3365004765" style={{ background: COLORS.gold, color: COLORS.black, padding: "16px 32px", borderRadius: 8, textDecoration: "none", fontWeight: 800, fontSize: 16, letterSpacing: 1 }}>
               📞 Call Coach Nelson
             </a>
-            <a href="mailto:krownacademynelson@gmail.com" style={{ background: COLORS.black, color: COLORS.white, padding: "16px 32px", borderRadius: 8, textDecoration: "none", fontWeight: 800, fontSize: 16, letterSpacing: 1 }}>
+            <a href="mailto:knelson@krownacademy.org" style={{ background: COLORS.black, color: COLORS.white, padding: "16px 32px", borderRadius: 8, textDecoration: "none", fontWeight: 800, fontSize: 16, letterSpacing: 1 }}>
               ✉️ Email Admissions
             </a>
           </div>
