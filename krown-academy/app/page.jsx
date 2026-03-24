@@ -292,10 +292,10 @@ function Nav({ active, setActive }) {
   return (
     <nav style={{ position: "fixed", top: 0, width: "100%", background: COLORS.black, zIndex: 1000, boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
       <div className="container mx-auto px-6 h-24 flex items-center justify-between">
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <a href="/admin" style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none", cursor: "pointer" }}>
           <img src="/Krown_Academy_New_Logo.png.png" alt="Krown Academy Crest" style={{ height: 75 }} />
           <div style={{ fontFamily: "'Cinzel', serif", fontSize: 26, fontWeight: 800, color: COLORS.gold, letterSpacing: 2 }}>KROWN ACADEMY</div>
-        </div>
+        </a>
         
         {/* Desktop Nav */}
         <div className="hidden lg:flex gap-2 lg:gap-4 items-center">
