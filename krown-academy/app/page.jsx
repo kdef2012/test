@@ -99,6 +99,7 @@ const FORMS = {
       { label: "Parent/Guardian Name", type: "text" },
       { label: "Phone Number", type: "tel" },
       { label: "Email Address", type: "email" },
+      { label: "Who referred you?", type: "select", options: ["Facebook", "Google", "Instagram", "Other"], hasOther: true },
       { label: "Why Krown Academy?", type: "textarea" },
       { label: "Parent Signature (Type Name)", type: "text" }
     ]
@@ -190,11 +191,13 @@ const FORMS = {
 function FormModal({ activeForm, setActiveForm }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showOther, setShowOther] = useState({});
 
   useEffect(() => {
     if (activeForm) {
       setSuccess(false);
       setIsSubmitting(false);
+      setShowOther({});
     }
   }, [activeForm]);
 
@@ -244,10 +247,27 @@ function FormModal({ activeForm, setActiveForm }) {
                 {field.type === "textarea" ? (
                   <textarea name={field.label} required rows={3} style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15, fontFamily: "inherit" }} />
                 ) : field.type === "select" ? (
-                  <select name={field.label} required style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15, fontFamily: "inherit", background: COLORS.white }}>
-                    <option value="">Select one...</option>
-                    {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <select name={field.label} required style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15, fontFamily: "inherit", background: COLORS.white }}
+                      onChange={(e) => {
+                        if (field.hasOther) {
+                          setShowOther(prev => ({ ...prev, [field.label]: e.target.value === "Other" }));
+                        }
+                      }}
+                    >
+                      <option value="">Select one...</option>
+                      {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                    {showOther[field.label] && (
+                      <input 
+                        type="text" 
+                        name={`${field.label} (Specified)`} 
+                        placeholder="Please specify"
+                        required 
+                        style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15, fontFamily: "inherit" }} 
+                      />
+                    )}
+                  </div>
                 ) : field.type === "checkbox" ? (
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                     <input type="checkbox" name={field.label} value="Yes" required style={{ width: 18, height: 18, marginTop: 4, cursor: "pointer" }} />
