@@ -133,7 +133,7 @@ const FORMS = {
       { label: "Student Full Name", type: "text" },
       { label: "Immunization Status", type: "select", options: ["Up to date", "Needs update", "Exemption claimed"] },
       { label: "Significant Medical History", type: "textarea" },
-      { label: "I acknowledge that I must also provide a physical copy of my child&apos;s official medical and immunization records to Kendall.", type: "checkbox" },
+      { label: "I acknowledge that I must also provide a physical copy of my child’s official medical and immunization records to Kendall.", type: "checkbox" },
       { label: "Parent Signature (Type Name)", type: "text" }
     ]
   },
@@ -391,18 +391,18 @@ function Hero() {
 function About() {
   return (
     <Section id="ourstory" bg={COLORS.offWhite}>
-      <SectionTitle sub="Our Story">Bring Me Metal. I&apos;ll Make You a Hammer.</SectionTitle>
+      <SectionTitle sub="Our Story">Bring Me Metal. I’ll Make You a Hammer.</SectionTitle>
       <div className="grid md:grid-cols-2 gap-12 items-start">
         <div>
           <img src="/ProfileHome.jpg" alt="Coach Kendall Nelson" style={{ float: "left", width: 180, height: 180, borderRadius: "50%", marginRight: 24, marginBottom: 12, objectFit: "cover", border: `4px solid ${COLORS.gold}`, boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }} />
           <p style={{ fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginBottom: 16 }}>
-            I&apos;m Kendall Nelson. I hold degrees in Sociology and Psychology. I&apos;m a championship level wrestling coach and owner of K-Vegas Elite Wrestling Club. I was once an at-risk youth myself.
+            I’m Kendall Nelson. I hold degrees in Sociology and Psychology. I’m a championship level wrestling coach and owner of K-Vegas Elite Wrestling Club. I was once an at-risk youth myself.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginBottom: 16 }}>
-            I know what it feels like to be written off. I know what It&apos;s like to need someone, just one person who sees your potential when nobody else does. That person, for my students, is going to be me.
+            I know what it feels like to be written off. I know what It’s like to need someone, just one person who sees your potential when nobody else does. That person, for my students, is going to be me.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginBottom: 16 }}>
-            Krown Academy is built on three pillars: rigorous academics, championship-level athletics, and intentional mentoring. These aren&apos;t departments, they&apos;re the DNA of everything we do.
+            Krown Academy is built on three pillars: rigorous academics, championship-level athletics, and intentional mentoring. These aren’t departments, they’re the DNA of everything we do.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.8, color: COLORS.textMuted, fontStyle: "italic" }}>
             &quot;The pessimist complains about the wind. The optimist expects it to change. At Krown Academy, we adjust the sails.&quot;
@@ -415,7 +415,7 @@ function About() {
             ["Athletics", "Championship Wrestling Coach"],
             ["Club", "Owner, K-Vegas Elite Wrestling Club"],
             ["Experience", "Current Math Teacher, WSFCS"],
-            ["Technology", "Creator, Ticket Owl&apos;d The Door (AI Assessment)"],
+            ["Technology", "Creator, Ticket Owl’d The Door (AI Assessment)"],
             ["Mission", "Former at-risk youth serving at-risk youth"],
           ].map(([k,v]) => (
             <div key={k} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "12px 0" }}>
@@ -441,7 +441,7 @@ function Pillars() {
       <SectionTitle sub="Three Pillars">One Standard of Excellence</SectionTitle>
       <div className="grid md:grid-cols-3 gap-6">
         <Card icon="📚" accent={COLORS.red} title="The Academic Pillar"
-          desc="College-preparatory digital curriculum through Acellus, supplemented by AI-powered Ticket Owl&apos;d The Door assessments and teacher-led direct instruction. Every student gets a 1:1 Chromebook. Self-paced. Individualized. No child falls through the cracks." />
+          desc="College-preparatory digital curriculum through Acellus, supplemented by AI-powered Ticket Owl’d The Door assessments and teacher-led direct instruction. Every student gets a 1:1 Chromebook. Self-paced. Individualized. No child falls through the cracks." />
         <Card icon="🤼" accent={COLORS.gold} title="The Athletic Pillar"
           desc="Championship wrestling as our cornerstone. Structured PE for non-wrestlers. USA Wrestling nationals. Prep Nationals in Pennsylvania every year. The mat teaches what the classroom alone cannot: resilience, accountability, and performance under pressure." />
         <Card icon="🤝" accent={COLORS.darkRed} title="The Mentoring Pillar"
@@ -459,8 +459,8 @@ function Academics() {
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         {[
           { n: "01", t: "Acellus Digital Curriculum", d: "Self-paced, video-based instruction in every core subject. Students work at their own level — a 7th grader in pre-algebra and a 10th grader in Algebra 2 sit side by side, each learning at their own pace. Accredited and aligned with national standards." },
-          { n: "02", t: "Ticket Owl&apos;d The Door", d: "Kendall's AI-powered exit ticket platform. Every day, every student completes an assessment that measures what they actually learned. Real-time data. No student can fake progress." },
-          { n: "03", t: "Teacher-Led Instruction", d: "Kendall isn&apos;t a passive monitor. Mini-lessons, small groups, 1-on-1 tutoring, Socratic discussions, and hands-on projects. The human element that makes the digital curriculum work." },
+          { n: "02", t: "Ticket Owl’d The Door", d: "Kendall's AI-powered exit ticket platform. Every day, every student completes an assessment that measures what they actually learned. Real-time data. No student can fake progress." },
+          { n: "03", t: "Teacher-Led Instruction", d: "Kendall isn’t a passive monitor. Mini-lessons, small groups, 1-on-1 tutoring, Socratic discussions, and hands-on projects. The human element that makes the digital curriculum work." },
         ].map(({ n, t, d }) => (
           <div key={n} style={{ background: COLORS.white, borderRadius: 12, padding: 28, boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
             <div style={{ color: COLORS.red, fontSize: 36, fontWeight: 900, opacity: 0.2, marginBottom: 8 }}>{n}</div>
@@ -702,7 +702,7 @@ function Athletics() {
       <div style={{ background: `linear-gradient(135deg, ${COLORS.black}, #1a0505)`, borderRadius: 16, padding: 32, color: COLORS.white, textAlign: "center" }}>
         <h3 style={{ color: COLORS.gold, fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Prep Nationals — Pennsylvania</h3>
         <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, maxWidth: 500, margin: "0 auto 20px" }}>
-          Every year, Krown Academy travels to Pennsylvania for Prep Nationals. This is a premier national preparatory school wrestling event. It&apos;s built into our budget and our identity.
+          Every year, Krown Academy travels to Pennsylvania for Prep Nationals. This is a premier national preparatory school wrestling event. It’s built into our budget and our identity.
         </p>
         <Button href={LINKS.prepNationals} variant="gold">Prep Nationals</Button>
       </div>
@@ -716,7 +716,7 @@ function Mentoring() {
     <Section id="mentoring" bg={COLORS.offWhite}>
       <SectionTitle sub="Mentoring">This Is Why We Exist</SectionTitle>
       <p style={{ fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginBottom: 24, maxWidth: 700 }}>
-        Mentoring is not an add-on at Krown Academy. It&apos;s woven into every day. Designed by Kendall from his degrees in Sociology and Psychology and his own experience as an at-risk youth.
+        Mentoring is not an add-on at Krown Academy. It’s woven into every day. Designed by Kendall from his degrees in Sociology and Psychology and his own experience as an at-risk youth.
       </p>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
@@ -750,8 +750,8 @@ function Enrollment({ setActiveForm }) {
         <div>
           <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>How to Enroll</h3>
           {[
-            { n: "1", t: "Contact Kendall", d: "Call or text 336-500-4765 or email knelson@krownacademy.org. I&apos;ll answer every question personally." },
-            { n: "2", t: "Complete the Online Enrollment Form", d: "Fill out the enrollment application below. I&apos;ll walk you through every step." },
+            { n: "1", t: "Contact Kendall", d: "Call or text 336-500-4765 or email knelson@krownacademy.org. I’ll answer every question personally." },
+            { n: "2", t: "Complete the Online Enrollment Form", d: "Fill out the enrollment application below. I’ll walk you through every step." },
             { n: "3", t: "Apply for Opportunity Scholarship", d: "I help every family apply. Most families pay $0 tuition. Link below." },
             { n: "4", t: "Submit Required Documents", d: "Student info form, medical clearance, immunization records, device agreement. All available as online forms." },
             { n: "5", t: "Welcome to Krown Academy", d: "Attend parent orientation, receive your Chromebook, and begin Day 1." },
@@ -862,7 +862,7 @@ function Parents() {
           ["Does my child get a computer?", "Yes. Every student receives a school-issued Chromebook for use in school and at home."],
           ["Does my child have to wrestle?", "No. Wrestling is our cornerstone sport, but students who prefer not to wrestle participate in structured PE."],
           ["What about mentoring?", "Every student participates daily. Morning mindset, weekly 1-on-1 meetings, sports psychology, group sessions."],
-          ["What if my child has a disability?", "They may qualify for ESA+ ($9,000–$17,000/year) on top of the Opportunity Scholarship. I&apos;ll help you navigate it."],
+          ["What if my child has a disability?", "They may qualify for ESA+ ($9,000–$17,000/year) on top of the Opportunity Scholarship. I’ll help you navigate it."],
         ].map(([q, a], i) => (
           <details key={i} style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "14px 0", cursor: "pointer" }}>
             <summary style={{ fontWeight: 600, fontSize: 15, color: COLORS.black, listStyle: "none", display: "flex", justifyContent: "space-between" }}>
@@ -916,7 +916,7 @@ function Contact() {
       <div className="grid md:grid-cols-2 gap-12">
         <div>
           <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, lineHeight: 1.8, marginBottom: 28 }}>
-            I answer every call, every text, every email personally. If you're thinking about Krown Academy for your child, reach out. I&apos;ll walk you through everything.
+            I answer every call, every text, every email personally. If you're thinking about Krown Academy for your child, reach out. I’ll walk you through everything.
           </p>
           {[
             ["Phone / Text", "336-500-4765"],
@@ -935,7 +935,7 @@ function Contact() {
         </div>
         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 16, padding: 28, border: "1px solid rgba(255,255,255,0.1)" }}>
           <h3 style={{ color: COLORS.white, fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Send a Message</h3>
-          {["Your Name", "Email", "Phone", "I&apos;m interested in..."].map((label, i) => (
+          {["Your Name", "Email", "Phone", "I’m interested in..."].map((label, i) => (
             <div key={i} style={{ marginBottom: 14 }}>
               <label style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 4, fontWeight: 600 }}>{label}</label>
               {i === 3 ? (
