@@ -10,7 +10,7 @@ export default function ScholarshipsPage() {
             $7,468/year — <span className="text-krown-red">100% covered</span>
           </p>
           <p className="text-white/60 text-lg max-w-xl mx-auto">
-            I set my tuition so qualifying families pay zero. Here&apos;s how it
+            I set my tuition so qualifying families pay zero. Here’s how it
             works.
           </p>
         </div>
@@ -26,7 +26,7 @@ export default function ScholarshipsPage() {
             The Opportunity Scholarship is a state-funded program that pays
             private school tuition for NC students in grades K–12. There is no
             income cap — every family is eligible. Lower-income families receive
-            higher awards that fully cover Krown Academy&apos;s tuition.
+            higher awards that fully cover Krown Academy’s tuition.
           </p>
 
           {/* Tier table */}
@@ -57,7 +57,7 @@ export default function ScholarshipsPage() {
 
           {/* Steps */}
           <h3 className="font-display text-lg font-semibold tracking-wider mb-4">
-            HOW TO APPLY (I&apos;LL WALK YOU THROUGH IT)
+            HOW TO APPLY (I’LL WALK YOU THROUGH IT)
           </h3>
           <div className="space-y-4 mb-16">
             {[
@@ -109,7 +109,7 @@ export default function ScholarshipsPage() {
           </p>
           <p className="text-krown-gray text-[15px] leading-relaxed mb-16">
             Your child needs an Eligibility Determination from a NC public school
-            (issued within the last 3 years). I&apos;ll help you navigate the entire
+            (issued within the last 3 years). I’ll help you navigate the entire
             process.
           </p>
 
@@ -119,7 +119,7 @@ export default function ScholarshipsPage() {
               I HELP EVERY FAMILY APPLY
             </h3>
             <p className="text-white/90 mb-6 max-w-lg mx-auto">
-              I know this process can feel overwhelming. That&apos;s why I personally
+              I know this process can feel overwhelming. That’s why I personally
               walk every Krown Academy family through the scholarship
               application. You are not alone in this.
             </p>
