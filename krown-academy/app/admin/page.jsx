@@ -71,6 +71,11 @@ export default function AdminPortal() {
             onMouseEnter={e => e.target.style.opacity = 0.9} onMouseLeave={e => e.target.style.opacity = 1}>
             Authenticate &rarr;
           </button>
+          <div style={{ marginTop: 24 }}>
+            <a href="/" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 600, textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.black} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>
+              &larr; Back to Home Screen
+            </a>
+          </div>
         </form>
       </div>
     );
@@ -100,6 +105,9 @@ export default function AdminPortal() {
         <button onClick={fetchData} style={{ background: "rgba(255,255,255,0.1)", color: COLORS.white, border: "none", padding: 12, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 20 }}>
           {loading ? "Syncing..." : "Refresh Database"}
         </button>
+        <a href="/" style={{ marginTop: 12, textAlign: "center", display: "block", background: "transparent", border: `1px solid rgba(255,255,255,0.2)`, color: "rgba(255,255,255,0.7)", padding: 12, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", textDecoration: "none", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.color = COLORS.white; e.currentTarget.style.borderColor = "rgba(255,255,255,0.5)"; }} onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}>
+          &larr; Back to Home Screen
+        </a>
       </div>
 
       {/* MAIN CONTENT AREA */}
