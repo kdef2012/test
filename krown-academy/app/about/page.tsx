@@ -8,7 +8,7 @@ export default function AboutPage() {
             MEET COACH NELSON
           </h1>
           <p className="text-white/60 italic text-lg">
-            &ldquo;Bring Me Metal, I&apos;ll Make You a Hammer.&rdquo;
+            &ldquo;Bring Me Metal, I’ll Make You a Hammer.&rdquo;
           </p>
         </div>
       </section>
@@ -17,32 +17,32 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto">
           <div className="space-y-6 text-[17px] leading-relaxed text-krown-gray">
             <p>
-              I&apos;m Kendall Nelson — experienced educator, championship wrestling
+              I’m Kendall Nelson — experienced educator, championship wrestling
               coach, and co-owner of K-Vegas Elite Wrestling Club in Kernersville,
-              NC. I&apos;m the founder and director of Krown Academy.
+              NC. I’m the founder and director of Krown Academy.
             </p>
             <p>
-              I&apos;ve spent my career working with two kinds of young people: students
+              I’ve spent my career working with two kinds of young people: students
               who need someone to push them academically, and athletes who need
               structure, discipline, and someone who genuinely believes in them.
-              Most of the time, they&apos;re the same kid.
+              Most of the time, they’re the same kid.
             </p>
             <p>
-              I&apos;ve watched at-risk students fall through the cracks of traditional
+              I’ve watched at-risk students fall through the cracks of traditional
               schools — kids with talent, heart, and potential — because nobody
               built something designed specifically for them. Krown Academy is what
               I built.
             </p>
             <p className="text-krown-black font-semibold text-xl">
               My philosophy is simple: the pessimist complains about the wind, the
-              optimist expects it to change, and the realist adjusts the sails. I&apos;m
-              a realist. I&apos;m not waiting for the system to fix itself. I&apos;m building
+              optimist expects it to change, and the realist adjusts the sails. I’m
+              a realist. I’m not waiting for the system to fix itself. I’m building
               my own.
             </p>
             <p>
               At Krown Academy, every student is a King or Queen. They earn that
               title every day — through discipline on the wrestling mat, through
-              rigor in the classroom, and through showing up when it&apos;s hard.
+              rigor in the classroom, and through showing up when it’s hard.
             </p>
             <p>
               My promise to every family: bring me your child — bring me metal —
@@ -71,7 +71,7 @@ export default function AboutPage() {
               </li>
               <li className="flex gap-3">
                 <span className="text-krown-red font-bold shrink-0">▸</span>
-                <span>Developer of AI-powered educational technology (Ticket Owl&apos;d The Door)</span>
+                <span>Developer of AI-powered educational technology (Ticket Owl’d The Door)</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-krown-red font-bold shrink-0">▸</span>
