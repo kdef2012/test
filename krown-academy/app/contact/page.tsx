@@ -72,19 +72,19 @@ export default function ContactPage() {
             </h3>
             <div className="space-y-4 text-[15px] text-white/70 leading-relaxed">
               <p>
-                When you call, text, or email me, here&apos;s what happens: I answer. 
-                Not a secretary, not a voicemail tree — me, Kendall Nelson. I&apos;ll 
+                When you call, text, or email me, here’s what happens: I answer. 
+                Not a secretary, not a voicemail tree — me, Kendall Nelson. I’ll 
                 ask about your child, listen to what you need, and tell you honestly 
                 whether Krown Academy is the right fit.
               </p>
               <p>
-                If it is, I&apos;ll walk you through everything: enrollment paperwork,
+                If it is, I’ll walk you through everything: enrollment paperwork,
                 scholarship applications (most families pay $0), athletic
                 clearance, and what to expect on Day 1. I make it easy for my
                 families.
               </p>
               <p className="text-white font-semibold">
-                Bring me your King or Queen. Bring me metal. I&apos;ll make them a
+                Bring me your King or Queen. Bring me metal. I’ll make them a
                 hammer.
               </p>
             </div>
