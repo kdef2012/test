@@ -24,7 +24,7 @@ export default function AcademicsPage() {
               <div className="space-y-6 text-[15px] text-krown-gray leading-relaxed">
                 <p>
                   My academic program is NC standards-aligned, rigorous, and
-                  personalized. I don&apos;t lower the bar — I build my Kings &amp;
+                  personalized. I don’t lower the bar — I build my Kings &amp;
                   Queens up to clear it.
                 </p>
                 <p>
@@ -74,7 +74,7 @@ export default function AcademicsPage() {
               At Krown Academy, academic achievement is non-negotiable. My
               student-athletes must maintain a 2.0 GPA to compete in wrestling
               and athletics. Students falling below 2.0 are placed on academic
-              probation — they may practice, but they don&apos;t compete until
+              probation — they may practice, but they don’t compete until
               their grades are restored. I provide tutoring and support to make
               sure every King and Queen stays eligible.
             </p>
