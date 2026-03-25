@@ -7,7 +7,7 @@ export default function AthleticsPage() {
             THE ATHLETIC PILLAR
           </h1>
           <p className="text-white/70 text-lg max-w-2xl mx-auto">
-            Championship-level athletic development. My Kings &amp; Queens don&apos;t
+            Championship-level athletic development. My Kings &amp; Queens don’t
             just train — they compete at the highest levels.
           </p>
         </div>
@@ -26,7 +26,7 @@ export default function AthleticsPage() {
                   Wrestling is the foundation of Krown Academy athletics. There is
                   no sport that builds discipline, mental toughness, and
                   accountability like wrestling. On the mat, there are no
-                  teammates to hide behind. It&apos;s you, your preparation, and your
+                  teammates to hide behind. It’s you, your preparation, and your
                   will.
                 </p>
                 <p>
@@ -106,7 +106,7 @@ export default function AthleticsPage() {
                   THE COLLEGE PIPELINE
                 </h3>
                 <p className="text-krown-gray text-[15px] leading-relaxed">
-                  I&apos;m not just building wrestlers — I&apos;m building a pipeline from
+                  I’m not just building wrestlers — I’m building a pipeline from
                   Krown Academy to collegiate wrestling programs. Competition
                   resume, coaching development, academic preparation. My Kings
                   &amp; Queens will be ready to wrestle at the next level.
