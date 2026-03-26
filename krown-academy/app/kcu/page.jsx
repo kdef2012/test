@@ -64,6 +64,17 @@ export default function KCUPortal() {
     });
     setShowBizForm(false);
     setSubmitting(false);
+    if (!error) {
+      // Alert Coach
+      fetch('/api/emails/business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId: student.id, businessName: bizForm.business_name, requestedAmount: bizForm.investment_requested, matchOption: 'N/A' })
+      }).catch(err => console.error(err));
+
+      // setBizSuccess(true); // This line was in the provided snippet but not in the original code. Assuming it's meant to be added.
+      // fetchData(); // This line was in the provided snippet but not in the original code. Assuming it's meant to be added.
+    }
     // Refresh
     const { data: plans } = await supabase.from('kcu_business_plans').select('*').eq('student_id', student.id).order('created_at', { ascending: false }).limit(1);
     if (plans && plans.length > 0) setBizPlan(plans[0]);
@@ -129,157 +140,191 @@ export default function KCUPortal() {
       </div>
 
       {/* TABS */}
-      <div style={{ maxWidth: 500, margin: "20px auto 0", padding: "0 16px" }}>
-        <div style={{ display: "flex", gap: 0, background: COLORS.white, borderRadius: 12, overflow: "hidden", border: `1px solid ${COLORS.lightGray}` }}>
-          {["balance", "history", "business"].map(t => (
+      <div style={{ maxWidth: 640, margin: "32px auto 0", padding: "0 16px" }}>
+        <div style={{ display: "flex", gap: 0, background: COLORS.white, borderRadius: 12, overflow: "hidden", border: `1px solid ${COLORS.lightGray}`, boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
+          {["academics", "banking", "business", "mentoring"].map(t => (
             <button key={t} onClick={() => setTab(t)}
-              style={{ flex: 1, padding: "12px 0", background: tab === t ? COLORS.gold : "transparent", color: tab === t ? COLORS.black : COLORS.textMuted, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", textTransform: "capitalize" }}>
-              {t === "balance" ? "Overview" : t === "history" ? "Transactions" : "Business"}
+              style={{ flex: 1, padding: "16px 4px", background: tab === t ? COLORS.black : "transparent", color: tab === t ? COLORS.white : COLORS.textMuted, border: "none", fontSize: 12, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5, transition: "all 0.2s" }}>
+              {t}
             </button>
           ))}
         </div>
       </div>
 
       {/* TAB CONTENT */}
-      <div style={{ maxWidth: 500, margin: "16px auto", padding: "0 16px 40px" }}>
+      <div style={{ maxWidth: 640, margin: "24px auto", padding: "0 16px 60px" }}>
 
-        {/* OVERVIEW */}
-        {tab === "balance" && (
+        {/* ACADEMICS */}
+        {tab === "academics" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+             <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+               <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 20, color: COLORS.black }}>Live Gradebook</h3>
+               {Object.keys(student.grades_in_progress || {}).length > 0 ? (
+                 Object.entries(student.grades_in_progress).map(([subj, grd]) => (
+                   <div key={subj} style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, padding: 16, background: COLORS.offWhite, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }}>
+                     <span style={{ fontWeight: 800, fontSize: 15 }}>{subj}</span>
+                     <span style={{ fontWeight: 900, color: COLORS.gold, fontSize: 16 }}>{grd}</span>
+                   </div>
+                 ))
+               ) : <div style={{ fontSize: 14, color: COLORS.textMuted, textAlign: "center", padding: 20 }}>No grades published yet.</div>}
+             </div>
+
+             <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+               <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 20, color: COLORS.black }}>Attendance Records</h3>
+               {(student.attendance_records || []).length > 0 ? (
+                 (student.attendance_records).map((rec, idx) => (
+                   <div key={idx} style={{ padding: 14, background: COLORS.offWhite, borderRadius: 8, marginBottom: 10, fontSize: 14, fontWeight: 700, borderLeft: `4px solid ${COLORS.red}` }}>{rec}</div>
+                 ))
+               ) : <div style={{ fontSize: 14, color: COLORS.green, fontWeight: 800, textAlign: "center", padding: "20px 0" }}>✨ Perfect attendance! No absences logged.</div>}
+             </div>
+             
+             <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)", textAlign: "center" }}>
+               <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 2 }}>GRADUATION PORTAL PROGRESS</div>
+               <div style={{ fontSize: 48, fontWeight: 900, color: COLORS.gold, margin: "12px 0" }}>{student.credits_earned} / 22</div>
+               <div style={{ fontSize: 14, color: COLORS.text, fontWeight: 600 }}>Total High School Credits Earned</div>
+             </div>
+          </div>
+        )}
+
+        {/* BANKING (Merged Overview & History) */}
+        {tab === "banking" && (
           <div>
-            <div style={{ background: COLORS.white, borderRadius: 12, padding: 20, marginBottom: 12 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: COLORS.textMuted, marginBottom: 12 }}>Account Status</h3>
+            <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, marginBottom: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: COLORS.textMuted, marginBottom: 20, letterSpacing: 1.5 }}>KCU ACCOUNT STATUS</h3>
               {[
-                ["Business status", account.business_status === 'none' ? 'Building your balance' : account.business_status],
-                ["Safety net", account.safety_net_used ? "Used (one-time)" : "Available"],
-                ["Account opened", new Date(account.created_at).toLocaleDateString()],
+                ["Business Funding Eligibility", account.business_status === 'none' ? 'Building your balance to $500' : account.business_status],
+                ["Safety Net Mechanism", account.safety_net_used ? "Used (One-Time)" : "Available"],
+                ["Account Activation Date", new Date(account.created_at).toLocaleDateString()],
               ].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${COLORS.lightGray}`, fontSize: 14 }}>
-                  <span style={{ color: COLORS.textMuted }}>{k}</span>
-                  <span style={{ fontWeight: 600 }}>{v}</span>
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${COLORS.lightGray}`, fontSize: 14 }}>
+                  <span style={{ color: COLORS.textMuted, fontWeight: 700 }}>{k}</span>
+                  <span style={{ fontWeight: 800, color: COLORS.black }}>{v}</span>
                 </div>
               ))}
             </div>
-            <div style={{ background: COLORS.white, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: COLORS.textMuted, marginBottom: 12 }}>Recent Activity</h3>
-              {transactions.slice(0, 5).map(tx => (
-                <div key={tx.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${COLORS.lightGray}` }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{tx.description}</div>
-                    <div style={{ fontSize: 11, color: COLORS.textMuted }}>{new Date(tx.created_at).toLocaleDateString()}</div>
+
+            <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: COLORS.textMuted, marginBottom: 20, letterSpacing: 1.5 }}>OFFICIAL TRANSACTION LEDGER</h3>
+              {transactions.map(tx => (
+                <div key={tx.id} style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderBottom: `1px solid ${COLORS.lightGray}` }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.black }}>{tx.description}</div>
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, fontWeight: 600 }}>{new Date(tx.created_at).toLocaleString()} &bull; Bal: {formatMoney(tx.balance_after)}</div>
                   </div>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: tx.category === 'deposit' ? COLORS.green : COLORS.red }}>
+                  <div style={{ fontWeight: 900, fontSize: 18, color: tx.category === 'deposit' ? COLORS.green : COLORS.red, minWidth: 80, textAlign: "right" }}>
                     {tx.category === 'deposit' ? '+' : '-'}{formatMoney(tx.amount)}
                   </div>
                 </div>
               ))}
+              {transactions.length === 0 && <p style={{ color: COLORS.textMuted, textAlign: "center", padding: 30, fontSize: 14, fontWeight: 600 }}>No financial transactions logged yet.</p>}
             </div>
           </div>
         )}
 
-        {/* TRANSACTION HISTORY */}
-        {tab === "history" && (
-          <div style={{ background: COLORS.white, borderRadius: 12, padding: 20 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: COLORS.textMuted, marginBottom: 12 }}>All Transactions</h3>
-            {transactions.map(tx => (
-              <div key={tx.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${COLORS.lightGray}` }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{tx.description}</div>
-                  <div style={{ fontSize: 11, color: COLORS.textMuted }}>{new Date(tx.created_at).toLocaleString()} • Bal: {formatMoney(tx.balance_after)}</div>
-                </div>
-                <div style={{ fontWeight: 800, fontSize: 15, color: tx.category === 'deposit' ? COLORS.green : COLORS.red, minWidth: 80, textAlign: "right" }}>
-                  {tx.category === 'deposit' ? '+' : '-'}{formatMoney(tx.amount)}
-                </div>
-              </div>
-            ))}
-            {transactions.length === 0 && <p style={{ color: COLORS.textMuted, textAlign: "center", padding: 20 }}>No transactions yet.</p>}
+        {/* MENTORING */}
+        {tab === "mentoring" && (
+          <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+             <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 16, color: COLORS.black }}>Coach Nelson's Mentoring Journal</h3>
+             <p style={{ fontSize: 15, color: COLORS.textMuted, marginBottom: 32, lineHeight: 1.6, fontWeight: 500 }}>These secure logs are written by Coach Nelson during weekly 1-on-1 mentoring sessions to keep parents directly informed of the student's personal, spiritual, and academic growth.</p>
+             
+             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+               {(student.mentor_notes || []).length === 0 && <div style={{ fontSize: 14, color: COLORS.textMuted, textAlign: "center", padding: 30, background: COLORS.offWhite, borderRadius: 12 }}>No mentoring journals have been published yet.</div>}
+               {(student.mentor_notes || []).map((note, idx) => (
+                 <div key={idx} style={{ padding: 24, background: COLORS.offWhite, borderRadius: 12, borderLeft: `6px solid ${COLORS.gold}`, boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.gold, letterSpacing: 1.5, marginBottom: 12 }}>{note.date}</div>
+                    <div style={{ fontSize: 16, color: COLORS.black, lineHeight: 1.8, fontWeight: 500 }}>{note.note}</div>
+                 </div>
+               ))}
+             </div>
           </div>
         )}
 
-        {/* BUSINESS */}
+        {/* BUSINESS PITCH */}
         {tab === "business" && (
           <div>
             {bizPlan ? (
-              <div style={{ background: COLORS.white, borderRadius: 12, padding: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 800 }}>{bizPlan.business_name}</h3>
-                  <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, fontWeight: 700, textTransform: "uppercase", background: bizPlan.status === 'submitted' ? "rgba(200,168,78,0.15)" : bizPlan.status === 'approved' ? COLORS.greenBg : bizPlan.status === 'funded' ? "rgba(55,138,221,0.1)" : COLORS.lightGray, color: bizPlan.status === 'submitted' ? COLORS.gold : bizPlan.status === 'approved' ? COLORS.green : bizPlan.status === 'funded' ? "#378ADD" : COLORS.textMuted }}>
+              <div style={{ background: COLORS.white, borderRadius: 16, padding: 40, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+                  <h3 style={{ fontSize: 24, fontWeight: 900, margin: 0 }}>{bizPlan.business_name}</h3>
+                  <span style={{ fontSize: 12, padding: "8px 16px", borderRadius: 8, fontWeight: 800, textTransform: "uppercase", background: bizPlan.status === 'submitted' ? "rgba(200,168,78,0.15)" : bizPlan.status === 'approved' ? COLORS.greenBg : bizPlan.status === 'funded' ? "rgba(55,138,221,0.1)" : COLORS.lightGray, color: bizPlan.status === 'submitted' ? COLORS.gold : bizPlan.status === 'approved' ? COLORS.green : bizPlan.status === 'funded' ? "#378ADD" : COLORS.textMuted }}>
                     {bizPlan.status}
                   </span>
                 </div>
                 {[
                   ["Investment Requested", formatMoney(bizPlan.investment_requested)],
-                  ["Summary", bizPlan.executive_summary],
-                  ["Product/Service", bizPlan.product_or_service],
-                  ["Target Market", bizPlan.target_market],
-                  ["Submitted", bizPlan.submitted_at ? new Date(bizPlan.submitted_at).toLocaleDateString() : "Draft"],
+                  ["Executive Summary", bizPlan.executive_summary],
+                  ["Product/Service Outline", bizPlan.product_or_service],
+                  ["Target Market Strategy", bizPlan.target_market],
+                  ["Submission Date", bizPlan.submitted_at ? new Date(bizPlan.submitted_at).toLocaleDateString() : "Draft"],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1 }}>{k}</div>
-                    <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.5 }}>{v || "—"}</div>
+                  <div key={k} style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{k}</div>
+                    <div style={{ fontSize: 16, color: COLORS.text, lineHeight: 1.6, fontWeight: 500, background: COLORS.offWhite, padding: 16, borderRadius: 8 }}>{v || "—"}</div>
                   </div>
                 ))}
                 {bizPlan.board_notes && (
-                  <div style={{ background: COLORS.offWhite, borderRadius: 8, padding: 16, marginTop: 12, borderLeft: `3px solid ${COLORS.gold}` }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.gold, marginBottom: 4 }}>BOARD NOTES</div>
-                    <div style={{ fontSize: 14, color: COLORS.text }}>{bizPlan.board_notes}</div>
+                  <div style={{ background: "rgba(200,168,78,0.05)", borderRadius: 12, padding: 24, marginTop: 24, borderLeft: `6px solid ${COLORS.gold}` }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.gold, marginBottom: 12, letterSpacing: 1 }}>INVESTMENT BOARD FEEDBACK NOTE</div>
+                    <div style={{ fontSize: 16, color: COLORS.text, lineHeight: 1.6, fontStyle: "italic", fontWeight: 600 }}>"{bizPlan.board_notes}"</div>
                   </div>
                 )}
               </div>
             ) : isEligible ? (
               <div>
                 {!showBizForm ? (
-                  <div style={{ background: COLORS.white, borderRadius: 12, padding: 32, textAlign: "center" }}>
-                    <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
-                    <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>You're eligible to pitch!</h3>
-                    <p style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 20 }}>Your balance has reached $500. Submit your business plan to the Krown Investment Board.</p>
-                    <button onClick={() => setShowBizForm(true)} style={{ padding: "14px 32px", background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>
+                  <div style={{ background: COLORS.white, borderRadius: 16, padding: 48, textAlign: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontSize: 64, marginBottom: 20 }}>🚀</div>
+                    <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 12, color: COLORS.black }}>You're eligible to Pitch!</h3>
+                    <p style={{ color: COLORS.textMuted, fontSize: 16, marginBottom: 32, lineHeight: 1.6 }}>Your financial discipline has paid off. Your KCU balance has reached the $500 threshold allowing you to submit a formal business pitch to the Krown Investment Board.</p>
+                    <button onClick={() => setShowBizForm(true)} style={{ padding: "18px 40px", background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 12, fontSize: 16, fontWeight: 900, cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.target.style.transform="scale(1.05)"} onMouseLeave={e => e.target.style.transform="scale(1)"}>
                       Write My Business Plan →
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={submitBizPlan} style={{ background: COLORS.white, borderRadius: 12, padding: 24 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: COLORS.gold }}>Your Business Plan</h3>
+                  <form onSubmit={submitBizPlan} style={{ background: COLORS.white, borderRadius: 16, padding: 40, boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
+                    <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 24, color: COLORS.gold, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16 }}>Official Business Pitch Application</h3>
                     {[
                       { key: "business_name", label: "Business Name", type: "text", required: true },
                       { key: "executive_summary", label: "What is your business? (Executive Summary)", type: "textarea", required: true },
                       { key: "product_or_service", label: "What are you selling or offering?", type: "textarea" },
                       { key: "target_market", label: "Who will buy this? Where will you find customers?", type: "textarea" },
                       { key: "marketing_plan", label: "How will people find out about your business?", type: "textarea" },
-                      { key: "investment_requested", label: "How much KCU money do you need? ($)", type: "number", required: true },
-                      { key: "projected_revenue", label: "How much do you expect to earn? ($)", type: "number" },
-                      { key: "projected_expenses", label: "How much will it cost to run? ($)", type: "number" },
-                      { key: "timeline", label: "When will you launch? Key milestones?", type: "textarea" },
-                      { key: "risk_assessment", label: "What could go wrong? How will you handle it?", type: "textarea" },
+                      { key: "investment_requested", label: "How much KCU capital are you requesting? ($)", type: "number", required: true },
+                      { key: "projected_revenue", label: "Projected monthly revenue? ($)", type: "number" },
+                      { key: "projected_expenses", label: "Projected monthly expenses to run the business? ($)", type: "number" },
+                      { key: "timeline", label: "What is your launch timeline & milestones?", type: "textarea" },
+                      { key: "risk_assessment", label: "What could go wrong? How will you handle those risks?", type: "textarea" },
                     ].map(f => (
-                      <div key={f.key} style={{ marginBottom: 14 }}>
-                        <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, display: "block", marginBottom: 4 }}>{f.label}{f.required ? " *" : ""}</label>
+                      <div key={f.key} style={{ marginBottom: 20 }}>
+                        <label style={{ fontSize: 13, fontWeight: 800, color: COLORS.black, display: "block", marginBottom: 8 }}>{f.label}{f.required ? <span style={{color:COLORS.red}}> *</span> : ""}</label>
                         {f.type === "textarea" ? (
                           <textarea value={bizForm[f.key]} onChange={e => setBizForm(prev => ({ ...prev, [f.key]: e.target.value }))} required={f.required}
-                            style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 14, resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" }} />
+                            style={{ width: "100%", padding: 16, borderRadius: 10, border: `2px solid ${COLORS.lightGray}`, fontSize: 15, resize: "vertical", minHeight: 120, boxSizing: "border-box", fontFamily: "inherit" }} />
                         ) : (
                           <input type={f.type} value={bizForm[f.key]} onChange={e => setBizForm(prev => ({ ...prev, [f.key]: e.target.value }))} required={f.required}
-                            style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 14, boxSizing: "border-box" }} />
+                            style={{ width: "100%", padding: 16, borderRadius: 10, border: `2px solid ${COLORS.lightGray}`, fontSize: 15, boxSizing: "border-box" }} />
                         )}
                       </div>
                     ))}
-                    <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-                      <button type="submit" disabled={submitting} style={{ flex: 1, padding: 14, background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-                        {submitting ? "Submitting..." : "Submit to Investment Board →"}
+                    <div style={{ display: "flex", gap: 16, marginTop: 32 }}>
+                      <button type="submit" disabled={submitting} style={{ flex: 1, padding: 18, background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 10, fontSize: 16, fontWeight: 900, cursor: "pointer" }}>
+                        {submitting ? "Submitting securely..." : "Submit to Investment Board →"}
                       </button>
-                      <button type="button" onClick={() => setShowBizForm(false)} style={{ padding: "14px 20px", background: COLORS.lightGray, border: "none", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancel</button>
+                      <button type="button" onClick={() => setShowBizForm(false)} style={{ padding: "18px 32px", background: "transparent", border: `2px solid ${COLORS.lightGray}`, color: COLORS.textMuted, borderRadius: 10, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Cancel</button>
                     </div>
                   </form>
                 )}
               </div>
             ) : (
-              <div style={{ background: COLORS.white, borderRadius: 12, padding: 32, textAlign: "center" }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>📈</div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Keep Building!</h3>
-                <p style={{ color: COLORS.textMuted, fontSize: 14 }}>You need a balance of $500 to submit a business plan. You're {formatMoney(500 - Number(account.balance))} away. Keep earning through grades, attendance, and jobs!</p>
+              <div style={{ background: COLORS.white, borderRadius: 16, padding: 48, textAlign: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.04)" }}>
+                <div style={{ fontSize: 64, marginBottom: 20 }}>📈</div>
+                <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 12, color: COLORS.black }}>Keep Building Funding!</h3>
+                <p style={{ color: COLORS.textMuted, fontSize: 16, lineHeight: 1.6, maxWidth: 400, margin: "0 auto" }}>You must command a KCU Treasury balance of $500 to submit a formal business plan. You are <b style={{color: COLORS.black}}>{formatMoney(500 - Number(account.balance))}</b> away. Maintain attendance and academic excellence to build capital.</p>
               </div>
             )}
           </div>
         )}
+
       </div>
 
       {/* FOOTER */}
