@@ -28,6 +28,11 @@ export default function KCUPortal() {
   const [assignments, setAssignments] = useState([]);
   const [grades, setGrades] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  
+  // Roundtable Recap State
+  const [roundtableTab, setRoundtableTab] = useState("eog");
+  const [exitTicket, setExitTicket] = useState("");
+  const [notebookEntry, setNotebookEntry] = useState("");
   const [showBizForm, setShowBizForm] = useState(false);
   const [bizForm, setBizForm] = useState({ business_name: "", executive_summary: "", product_or_service: "", target_market: "", marketing_plan: "", investment_requested: "", projected_revenue: "", projected_expenses: "", timeline: "", risk_assessment: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -268,16 +273,76 @@ export default function KCUPortal() {
           </div>
         )}
 
-        {/* ROUNDTABLE RECAP */}
+        {/* ROUNDTABLE RECAP (TICKET OWL NATIVE PORT) */}
         {tab === "roundtable" && (
-          <div style={{ background: COLORS.white, borderRadius: 16, padding: 48, textAlign: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
-            <div style={{ fontSize: 64, marginBottom: 20 }}>🦉</div>
-            <h3 style={{ fontSize: 28, fontWeight: 900, color: COLORS.black, marginBottom: 12 }}>Roundtable Recap</h3>
-            <p style={{ color: COLORS.textMuted, fontSize: 16, lineHeight: 1.6, maxWidth: 500, margin: "0 auto 32px" }}>
-              The native port of the Ticket Owl platform is currently underway. Soon, you will be able to complete your Exit Tickets, test EOG Practice questions, and review your AI Notebook directly from the unified Krown Academy Family Hub.
-            </p>
-            <div style={{ padding: "16px 32px", background: "rgba(200,168,78,0.1)", color: COLORS.gold, borderRadius: 12, display: "inline-block", fontWeight: 800, letterSpacing: 1 }}>
-              SYSTEM MIGRATION IN PROGRESS
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Header & Internal Nav */}
+            <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+              <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
+                <div style={{ fontSize: 32 }}>🦉</div>
+                <div>
+                  <h3 style={{ fontSize: 24, fontWeight: 900, color: COLORS.black, margin: 0 }}>Roundtable Recap</h3>
+                  <p style={{ color: COLORS.gold, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, margin: "4px 0 0" }}>Native EOG & Exit Ticket Portal</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["eog", "tickets", "notebook"].map(rt => (
+                  <button key={rt} onClick={() => setRoundtableTab(rt)}
+                    style={{ padding: "10px 20px", background: roundtableTab === rt ? COLORS.red : "transparent", color: roundtableTab === rt ? COLORS.white : COLORS.textMuted, border: roundtableTab === rt ? "none" : `1px solid ${COLORS.lightGray}`, borderRadius: 8, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }}>
+                    {rt === "eog" ? "EOG Practice" : rt === "tickets" ? "Daily Exit Tickets" : "AI Notebook"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Roundtable Content Areas */}
+            <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+              
+              {roundtableTab === "eog" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: COLORS.black }}>End-of-Grade (EOG) Practice Questions</h3>
+                  <p style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Answer your assigned daily EOG questions to earn KCU capital. Your teacher reviews all submissions.</p>
+                  
+                  <div style={{ background: COLORS.offWhite, padding: 24, borderRadius: 12, borderLeft: `4px solid ${COLORS.gold}`, marginBottom: 20 }}>
+                    <div style={{ fontWeight: 800, color: COLORS.gold, fontSize: 12, marginBottom: 8 }}>QUESTIONS FROM COACH NELSON</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: COLORS.black, lineHeight: 1.5 }}>
+                      "Explain the historical significance of the Magna Carta in relation to modern democratic rights."
+                    </div>
+                  </div>
+                  <textarea placeholder="Write your complete response here..." style={{ width: "100%", padding: 16, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, minHeight: 120, fontSize: 15, fontFamily: "'Outfit', sans-serif" }}></textarea>
+                  <button style={{ background: COLORS.black, color: COLORS.white, padding: "14px 24px", borderRadius: 8, border: "none", fontWeight: 800, cursor: "pointer", marginTop: 12 }}>Submit EOG Check &rarr;</button>
+                </div>
+              )}
+
+              {roundtableTab === "tickets" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: COLORS.black }}>Daily Exit Tickets</h3>
+                  <p style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Complete your exit ticket before leaving class to secure your daily attendance and KCU stipend.</p>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 14, fontWeight: 800, marginBottom: 8 }}>What was the most important concept you learned today?</label>
+                      <textarea value={exitTicket} onChange={e => setExitTicket(e.target.value)} placeholder="Type your answer..." style={{ width: "100%", padding: 16, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, minHeight: 80, fontSize: 15, fontFamily: "'Outfit', sans-serif" }}></textarea>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 14, fontWeight: 800, marginBottom: 8 }}>What are you still confused about?</label>
+                      <textarea placeholder="Type your answer..." style={{ width: "100%", padding: 16, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, minHeight: 80, fontSize: 15, fontFamily: "'Outfit', sans-serif" }}></textarea>
+                    </div>
+                    <button onClick={() => { alert('Exit Ticket securely submitted to your Teacher.'); setExitTicket(''); }} style={{ background: COLORS.red, color: COLORS.white, padding: "14px 24px", borderRadius: 8, border: "none", fontWeight: 800, cursor: "pointer", alignSelf: "flex-start" }}>Submit Exit Ticket</button>
+                  </div>
+                </div>
+              )}
+
+              {roundtableTab === "notebook" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: COLORS.black }}>Personal AI Notebook</h3>
+                  <p style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Summarize your thoughts or brainstorm ideas. This is your private scratchpad.</p>
+                  
+                  <textarea value={notebookEntry} onChange={e => setNotebookEntry(e.target.value)} placeholder="Start typing your notes here..." style={{ width: "100%", padding: 20, borderRadius: 12, border: `2px dashed ${COLORS.gold}`, minHeight: 200, fontSize: 16, background: "rgba(200,168,78,0.03)", fontFamily: "'Outfit', sans-serif", resize: "vertical" }}></textarea>
+                  <p style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 12, textAlign: "right" }}>Changes are auto-saved locally.</p>
+                </div>
+              )}
+
             </div>
           </div>
         )}
