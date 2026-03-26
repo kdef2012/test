@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const COLORS = {
   red: "#C41E1E", darkRed: "#8B0000", black: "#000000", gold: "#C8A84E",
   white: "#FFFFFF", offWhite: "#F8F6F0", lightGray: "#E8E6E0", text: "#1A1A1A", textMuted: "#6B6B6B"
 };
-
-const MASTER_PASSWORD = "KROWN"; // Simple MVP Password
 
 // STANDARD NC GRADUATION REQUIREMENTS CATALOG
 const CORE_CLASSES = [
@@ -19,64 +19,46 @@ const CORE_CLASSES = [
 ];
 
 export default function AdminPortal() {
-  const [auth, setAuth] = useState(false);
-  const [password, setPassword] = useState("");
+  const { user, role, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("Dashboard");
   
   const [applications, setApplications] = useState([]);
   const [students, setStudents] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Authentication
-  const handleAuth = (e) => {
-    e.preventDefault();
-    if (password === MASTER_PASSWORD) {
-      setAuth(true);
-      fetchData();
-    } else {
-      alert("Invalid Master Password. Access Denied.");
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || role !== 'admin') {
+        router.push('/login');
+      } else {
+        fetchData();
+      }
     }
-  };
+  }, [user, role, authLoading, router]);
 
   const fetchData = async () => {
     setLoading(true);
-    const [appRes, stuRes, logRes] = await Promise.all([
+    const [appRes, stuRes, logRes, profRes] = await Promise.all([
       supabase.from('applications').select('*').order('submitted_at', { ascending: false }),
       supabase.from('students').select('*').order('name'),
-      supabase.from('mentoring_logs').select('*').order('logged_at', { ascending: false })
+      supabase.from('mentoring_logs').select('*').order('logged_at', { ascending: false }),
+      supabase.from('profiles').select('*').order('created_at', { ascending: false })
     ]);
     
     if (appRes.data) setApplications(appRes.data);
     if (stuRes.data) setStudents(stuRes.data);
     if (logRes.data) setLogs(logRes.data);
+    if (profRes.data) setProfiles(profRes.data);
     setLoading(false);
   };
 
-  if (!auth) {
+  if (authLoading || !user || role !== 'admin') {
     return (
       <div style={{ minHeight: "100vh", background: COLORS.black, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <form onSubmit={handleAuth} style={{ background: COLORS.white, padding: 40, borderRadius: 12, width: "100%", maxWidth: 400, textAlign: "center", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}>
-          <div style={{ width: 60, height: 4, background: COLORS.red, margin: "0 auto 20px" }} />
-          <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 24, fontWeight: 800, color: COLORS.black, marginBottom: 8 }}>KROWN ACADEMY</h1>
-          <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 32, letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>Secure Admin Portal</p>
-          <input 
-            type="password" 
-            placeholder="Master Password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%", padding: 14, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, fontSize: 16, marginBottom: 20, textAlign: "center", fontFamily: "inherit" }}
-          />
-          <button type="submit" style={{ width: "100%", padding: 14, background: COLORS.red, color: COLORS.white, border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: "pointer", transition: "opacity 0.2s" }}
-            onMouseEnter={e => e.target.style.opacity = 0.9} onMouseLeave={e => e.target.style.opacity = 1}>
-            Authenticate &rarr;
-          </button>
-          <div style={{ marginTop: 24 }}>
-            <a href="/" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 600, textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.black} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>
-              &larr; Back to Home Screen
-            </a>
-          </div>
-        </form>
+        <p style={{ color: COLORS.gold, fontWeight: 800, letterSpacing: 2 }}>AUTHENTICATING COMMAND CENTER...</p>
       </div>
     );
   }
@@ -91,7 +73,7 @@ export default function AdminPortal() {
         </div>
         
         <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {["Dashboard", "Applications", "Students", "Mentoring", "Emergencies"].map(tab => (
+          {["Dashboard", "Applications", "Students", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -100,6 +82,8 @@ export default function AdminPortal() {
               {tab}
             </button>
           ))}
+          <a href="/admin/knightbooks" style={{ textAlign: "left", background: "transparent", color: "rgba(255,255,255,0.7)", textDecoration: "none", padding: "12px 16px", borderRadius: 8, fontSize: 15, fontWeight: 500, borderLeft: "3px solid transparent" }}>Knight-Books</a>
+          <a href="/admin/kcu" style={{ textAlign: "left", background: "transparent", color: "rgba(255,255,255,0.7)", textDecoration: "none", padding: "12px 16px", borderRadius: 8, fontSize: 15, fontWeight: 500, borderLeft: "3px solid transparent" }}>KCU Admin</a>
         </div>
         
         <button onClick={fetchData} style={{ background: "rgba(255,255,255,0.1)", color: COLORS.white, border: "none", padding: 12, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 20 }}>
@@ -117,6 +101,7 @@ export default function AdminPortal() {
         {activeTab === "Students" && <StudentsView students={students} applications={applications} fetchData={fetchData} />}
         {activeTab === "Mentoring" && <MentoringView students={students} logs={logs} fetchData={fetchData} />}
         {activeTab === "Emergencies" && <EmergenciesView students={students} applications={applications} />}
+        {activeTab === "Staff & Identities" && <StaffIdentitiesView profiles={profiles} fetchData={fetchData} />}
       </div>
     </div>
   );
