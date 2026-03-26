@@ -296,6 +296,12 @@ function StudentsView({ students, applications, fetchData }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [gradeFilter, setGradeFilter] = useState("All");
   const [viewingForm, setViewingForm] = useState(null);
+  const [activeTab, setActiveTab] = useState("Overview");
+
+  const updateStudentField = async (field, value) => {
+    setSelectedStudent(prev => ({ ...prev, [field]: value }));
+    await supabase.from('students').update({ [field]: value }).eq('id', selectedStudent.id);
+  };
 
   const filteredStudents = students.filter(s => gradeFilter === "All" || s.grade === gradeFilter);
   
@@ -376,60 +382,187 @@ function StudentsView({ students, applications, fetchData }) {
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 24, marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontSize: 32, fontWeight: 800, color: COLORS.black }}>{selectedStudent.name}</h2>
-                  <div style={{ fontSize: 15, color: COLORS.textMuted, marginTop: 4 }}>Degree Tracker &bull; Requires 22 Credits</div>
+                  <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4, fontWeight: 700 }}>ID: {selectedStudent.id} &bull; {selectedStudent.grade}</div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 36, fontWeight: 900, color: COLORS.gold, lineHeight: 1 }}>{selectedStudent.credits_earned}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1 }}>Credits Earned</div>
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {["Overview", "Academics", "Contact & Med", "Mentoring"].map(t => (
+                      <button key={t} onClick={() => setActiveTab(t)} style={{ padding: "8px 14px", background: activeTab === t ? COLORS.black : "transparent", color: activeTab === t ? COLORS.white : COLORS.textMuted, border: `1px solid ${activeTab === t ? COLORS.black : COLORS.lightGray}`, borderRadius: 6, fontSize: 12, fontWeight: 800, textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s" }}>{t}</button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.gold }}>{selectedStudent.credits_earned} / 22 CREDITS EARNED</div>
                 </div>
               </div>
 
-              {/* Digital File: Past Forms */}
-              <div style={{ marginBottom: 32, background: COLORS.offWhite, padding: 24, borderRadius: 12, border: `1px solid ${COLORS.lightGray}` }}>
-                 <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Student Digital File (Submitted Forms)</h3>
-                 {studentForms.length > 0 ? (
-                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                     {studentForms.map(form => (
-                       <button key={form.id} onClick={() => setViewingForm(form)} style={{ padding: "8px 16px", background: COLORS.white, border: `1px solid ${COLORS.red}`, color: COLORS.red, borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                         📄 {form.form_type}
-                       </button>
-                     ))}
-                   </div>
-                 ) : (
-                   <div style={{ fontSize: 13, color: COLORS.textMuted }}>No submitted applications firmly matching this student's name found in the database.</div>
-                 )}
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+              {activeTab === "Overview" && (
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>Core Requirements Tracker</h3>
-                  {CORE_CLASSES.map(cls => {
-                    const isTaken = (selectedStudent.taken || []).includes(cls);
-                    return (
-                      <label key={cls} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: isTaken ? '#f0fdf4' : COLORS.offWhite, borderRadius: 8, marginBottom: 8, cursor: "pointer", border: `1px solid ${isTaken ? '#10b981' : COLORS.lightGray}` }}>
-                        <input type="checkbox" checked={isTaken} onChange={() => toggleClass(cls)} style={{ width: 18, height: 18, accentColor: COLORS.red, cursor: "pointer" }} />
-                        <span style={{ fontSize: 14, fontWeight: isTaken ? 700 : 500, color: isTaken ? COLORS.black : COLORS.textMuted, textDecoration: isTaken ? "line-through" : "none" }}>{cls}</span>
-                      </label>
-                    )
-                  })}
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>Electives & Other Passed</h3>
-                  <div style={{ background: COLORS.offWhite, padding: 24, borderRadius: 12, minHeight: 150 }}>
-                     {(selectedStudent.taken || []).filter(c => !CORE_CLASSES.includes(c)).map(cls => (
-                       <div key={cls} style={{ fontSize: 14, fontWeight: 600, padding: "8px 12px", background: COLORS.white, borderRadius: 6, marginBottom: 8, display: "inline-block", marginRight: 8, border: `1px solid ${COLORS.lightGray}` }}>
-                         {cls} <button onClick={() => toggleClass(cls)} style={{ background: "none", border: "none", color: COLORS.red, marginLeft: 8, cursor: "pointer", fontWeight: 800 }}>&times;</button>
+                  <div style={{ marginBottom: 32, background: COLORS.offWhite, padding: 24, borderRadius: 12, border: `1px solid ${COLORS.lightGray}` }}>
+                     <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Student Digital File (Submitted Forms)</h3>
+                     {studentForms.length > 0 ? (
+                       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                         {studentForms.map(form => (
+                           <button key={form.id} onClick={() => setViewingForm(form)} style={{ padding: "8px 16px", background: COLORS.white, border: `1px solid ${COLORS.red}`, color: COLORS.red, borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                             📄 {form.form_type}
+                           </button>
+                         ))}
                        </div>
-                     ))}
-                     <div style={{ marginTop: 16 }}>
-                       <input type="text" placeholder="Add custom elective..." onKeyDown={e => { if (e.key === 'Enter' && e.target.value) { toggleClass(e.target.value); e.target.value = ''; } }} style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 14 }} />
-                     </div>
+                     ) : (
+                       <div style={{ fontSize: 13, color: COLORS.textMuted }}>No submitted applications firmly matching this student's name found.</div>
+                     )}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>Core Requirements Tracker</h3>
+                      {CORE_CLASSES.map(cls => {
+                        const isTaken = (selectedStudent.taken || []).includes(cls);
+                        return (
+                          <label key={cls} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: isTaken ? '#f0fdf4' : COLORS.offWhite, borderRadius: 8, marginBottom: 8, cursor: "pointer", border: `1px solid ${isTaken ? '#10b981' : COLORS.lightGray}` }}>
+                            <input type="checkbox" checked={isTaken} onChange={() => toggleClass(cls)} style={{ width: 18, height: 18, accentColor: COLORS.red, cursor: "pointer" }} />
+                            <span style={{ fontSize: 14, fontWeight: isTaken ? 700 : 500, color: isTaken ? COLORS.black : COLORS.textMuted, textDecoration: isTaken ? "line-through" : "none" }}>{cls}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16 }}>Electives & Other Passed</h3>
+                      <div style={{ background: COLORS.offWhite, padding: 24, borderRadius: 12, minHeight: 150 }}>
+                         {(selectedStudent.taken || []).filter(c => !CORE_CLASSES.includes(c)).map(cls => (
+                           <div key={cls} style={{ fontSize: 14, fontWeight: 600, padding: "8px 12px", background: COLORS.white, borderRadius: 6, marginBottom: 8, display: "inline-block", marginRight: 8, border: `1px solid ${COLORS.lightGray}` }}>
+                             {cls} <button onClick={() => toggleClass(cls)} style={{ background: "none", border: "none", color: COLORS.red, marginLeft: 8, cursor: "pointer", fontWeight: 800 }}>&times;</button>
+                           </div>
+                         ))}
+                         <div style={{ marginTop: 16 }}>
+                           <input type="text" placeholder="Add elective & hit Enter..." onKeyDown={e => { if (e.key === 'Enter' && e.target.value) { toggleClass(e.target.value); e.target.value = ''; } }} style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 14 }} />
+                         </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {activeTab === "Academics" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                   <div>
+                     <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Live Gradebook</h3>
+                     <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 16 }}>Type classes and current grades. Automatically saves on blur.</p>
+                     <div style={{ background: COLORS.offWhite, padding: 20, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+                       {Object.entries(selectedStudent.grades_in_progress || {}).map(([subject, grade]) => (
+                         <div key={subject} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                           <div style={{ flex: 1, padding: "10px 16px", background: COLORS.white, border: `1px solid ${COLORS.lightGray}`, borderRadius: 6, fontWeight: 700, fontSize: 14 }}>{subject}</div>
+                           <input type="text" defaultValue={grade} onBlur={e => {
+                             const newG = {...(selectedStudent.grades_in_progress || {}), [subject]: e.target.value};
+                             updateStudentField("grades_in_progress", newG);
+                           }} style={{ width: 80, padding: "10px 16px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, textAlign: "center", fontWeight: 800, fontSize: 14 }} />
+                           <button onClick={() => {
+                             const newG = {...(selectedStudent.grades_in_progress || {})};
+                             delete newG[subject];
+                             updateStudentField("grades_in_progress", newG);
+                           }} style={{ color: COLORS.red, fontWeight: 800, background: "none", border: "none", cursor: "pointer", fontSize: 20 }}>&times;</button>
+                         </div>
+                       ))}
+                       <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                         <input id="new-subj" type="text" placeholder="Subject (e.g. Math 1)" style={{ flex: 1, padding: "10px 16px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, fontSize: 13 }} />
+                         <input id="new-grd" type="text" placeholder="Grade %" style={{ width: 80, padding: "10px 16px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, fontSize: 13 }} />
+                         <button onClick={() => {
+                           const s = document.getElementById("new-subj").value;
+                           const g = document.getElementById("new-grd").value;
+                           if(s && g) {
+                             const newG = {...(selectedStudent.grades_in_progress || {}), [s]: g};
+                             updateStudentField("grades_in_progress", newG);
+                             document.getElementById("new-subj").value = "";
+                             document.getElementById("new-grd").value = "";
+                           }
+                         }} style={{ background: COLORS.black, color: COLORS.white, padding: "0 16px", borderRadius: 6, fontWeight: 800, cursor: "pointer", fontSize: 12, textTransform: "uppercase" }}>Add</button>
+                       </div>
+                     </div>
+                   </div>
+                   
+                   <div>
+                     <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Attendance Log</h3>
+                     <div style={{ background: COLORS.offWhite, padding: 20, borderRadius: 12 }}>
+                       <textarea placeholder="e.g. Absent 10/14 (Sick), Tardy 10/15" defaultValue={(selectedStudent.attendance_records || []).join("\\n")} onBlur={e => {
+                         updateStudentField("attendance_records", e.target.value.split("\\n").filter(x => x));
+                       }} style={{ width: "100%", height: 260, padding: 16, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, resize: "none", fontSize: 14, lineHeight: 1.6 }} />
+                     </div>
+                   </div>
+                </div>
+              )}
+
+              {activeTab === "Contact & Med" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+                  <div>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Family Contacts</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>PARENT / GUARDIAN NAMES</label>
+                        <input type="text" defaultValue={selectedStudent.parent_names || ""} onBlur={e => updateStudentField("parent_names", e.target.value)} style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, marginTop: 6 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>EMAIL ADDRESS</label>
+                        <input type="text" defaultValue={selectedStudent.parent_email || ""} onBlur={e => updateStudentField("parent_email", e.target.value)} style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, marginTop: 6 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>PRIMARY PHONE</label>
+                        <input type="text" defaultValue={selectedStudent.parent_phone || ""} onBlur={e => updateStudentField("parent_phone", e.target.value)} style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, marginTop: 6 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>HOME ADDRESS</label>
+                        <input type="text" defaultValue={selectedStudent.address || ""} onBlur={e => updateStudentField("address", e.target.value)} style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, marginTop: 6 }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Medical & Extracurricular</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>DATE OF BIRTH</label>
+                        <input type="date" defaultValue={selectedStudent.dob || ""} onBlur={e => updateStudentField("dob", e.target.value)} style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, marginTop: 6 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>KNOWN ALLERGIES & MEDICAL</label>
+                        <textarea defaultValue={selectedStudent.allergies_medical || ""} onBlur={e => updateStudentField("allergies_medical", e.target.value)} style={{ width: "100%", height: 110, padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, resize: "none", marginTop: 6 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>PRIMARY SPORT(S)</label>
+                        <input type="text" defaultValue={selectedStudent.primary_sport || ""} onBlur={e => updateStudentField("primary_sport", e.target.value)} style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, marginTop: 6 }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "Mentoring" && (
+                <div>
+                   <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Coach's Mentoring Journal</h3>
+                   <div style={{ background: COLORS.offWhite, padding: 24, borderRadius: 12 }}>
+                     <textarea placeholder="Write new mentor notes here. These will be securely visible to parents on the Family Hub..." id="new-mentor-note" style={{ width: "100%", height: 120, padding: 16, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, resize: "none", marginBottom: 12, fontSize: 15 }} />
+                     <button onClick={() => {
+                       const note = document.getElementById("new-mentor-note").value;
+                       if (note) {
+                         const entry = { date: new Date().toLocaleDateString(), note };
+                         const newNotes = [entry, ...(selectedStudent.mentor_notes || [])];
+                         updateStudentField("mentor_notes", newNotes);
+                         document.getElementById("new-mentor-note").value = "";
+                       }
+                     }} style={{ background: COLORS.black, color: COLORS.white, padding: "12px 24px", borderRadius: 8, fontWeight: 800, cursor: "pointer" }}>Save Journal Entry</button>
+
+                     <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 16, maxHeight: 400, overflowY: "auto" }}>
+                       {(selectedStudent.mentor_notes || []).length === 0 && <div style={{ fontSize: 14, color: COLORS.textMuted }}>No mentoring notes logged yet.</div>}
+                       {(selectedStudent.mentor_notes || []).map((noteObj, idx) => (
+                         <div key={idx} style={{ padding: 20, background: COLORS.white, borderRadius: 8, borderLeft: `4px solid ${COLORS.gold}`, boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+                           <div style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 800, marginBottom: 8, letterSpacing: 1 }}>{noteObj.date}</div>
+                           <div style={{ fontSize: 15, lineHeight: 1.6, color: COLORS.black }}>{noteObj.note}</div>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                </div>
+              )}
+
             </div>
           ) : (
-            <div style={{ color: COLORS.textMuted, textAlign: "center", paddingTop: 100 }}>Select a student to manage their Degree Audit.</div>
+            <div style={{ color: COLORS.textMuted, textAlign: "center", paddingTop: 100, fontSize: 16, fontWeight: 500 }}>Select a student to access their Unified Profile.</div>
           )}
        </div>
 
