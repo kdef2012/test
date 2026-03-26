@@ -322,28 +322,6 @@ export default function KCUAdmin() {
   // Get student name from ID
   const getName = (sid) => students.find(s => s.id === sid)?.name || 'Unknown';
   const getAccount = (sid) => accounts.find(a => a.student_id === sid);
-
-  // ============================================================
-  // AUTH SCREEN
-  // ============================================================
-  if (!auth) {
-    return (
-      <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${COLORS.black} 0%, #1a0f00 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <form onSubmit={handleAuth} style={{ background: COLORS.white, padding: 48, borderRadius: 16, width: "100%", maxWidth: 420, textAlign: "center", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}>
-          <div style={{ width: 60, height: 4, background: COLORS.gold, margin: "0 auto 20px", borderRadius: 2 }} />
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: COLORS.gold, letterSpacing: 3, marginBottom: 4 }}>KROWN CREDIT UNION</h1>
-          <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 32, letterSpacing: 2, textTransform: "uppercase" }}>Admin Portal</p>
-          <input type="password" placeholder="Master Password" value={password} onChange={e => setPassword(e.target.value)}
-            style={{ width: "100%", padding: 14, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, fontSize: 16, marginBottom: 20, textAlign: "center", boxSizing: "border-box" }} />
-          <button type="submit" style={{ width: "100%", padding: 14, background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 8, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>
-            Enter the Vault →
-          </button>
-          <a href="/admin" style={{ display: "block", marginTop: 20, color: COLORS.textMuted, fontSize: 13, textDecoration: "none" }}>← Back to Admin Portal</a>
-        </form>
-      </div>
-    );
-  }
-
   // ============================================================
   // MAIN LAYOUT
   // ============================================================
