@@ -1,21 +1,27 @@
 import type { Metadata } from "next";
+import { AuthProvider } from "../context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://krownacademy.org'),
   title: "Krown Academy | Earn Your Krown",
-  description:
-    "Athletics & Academics for At-Risk Youth and Student-Athletes. Grades 6-12. Winston-Salem / Kernersville, NC. Founded by Kendall Nelson.",
-  keywords: [
-    "Krown Academy",
-    "private school",
-    "at-risk youth",
-    "student athletes",
-    "wrestling",
-    "Winston-Salem",
-    "Kernersville",
-    "NC",
-    "Kendall Nelson",
-  ],
+  description: "A private school for at-risk youth and student-athletes in Winston-Salem / Kernersville, NC. Tuition-free for qualifying Opportunity Scholarship families.",
+  keywords: ["Krown Academy", "private school", "Kendall Nelson", "wrestling", "student athletes", "Opportunity Scholarship", "NC", "at-risk youth"],
+  openGraph: {
+    title: "Krown Academy | Earn Your Krown",
+    description: "Athletics. Academics. Mentoring. A private school for at-risk youth and student-athletes. 100% College Readiness Guarantee.",
+    url: "https://krownacademy.org",
+    siteName: "Krown Academy",
+    images: [{ url: "/Krown_Academy_New_Logo.png.png", width: 1200, height: 630, alt: "Krown Academy Logo" }],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Krown Academy | Earn Your Krown",
+    description: "Athletics. Academics. Mentoring. A private school for at-risk youth and student-athletes in Winston-Salem, NC.",
+    images: ["/Krown_Academy_New_Logo.png.png"],
+  },
 };
 
 export default function RootLayout({
@@ -33,7 +39,9 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-krown-white">
-        <main>{children}</main>
+        <AuthProvider>
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
