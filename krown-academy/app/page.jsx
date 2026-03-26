@@ -212,7 +212,7 @@ function FormModal({ activeForm, setActiveForm }) {
     
     const { error } = await supabase
       .from('applications')
-      .insert({ form_type: form.title, data: dataObj });
+      .insert({ form_type: form.title, data: dataObj, status: 'Pending' });
       
     setIsSubmitting(false);
     if (!error) {
