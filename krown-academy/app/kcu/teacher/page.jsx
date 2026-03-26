@@ -30,6 +30,11 @@ export default function KCUTeacher() {
   const [accounts, setAccounts] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [recentTxs, setRecentTxs] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("success");
   const [customAmount, setCustomAmount] = useState("");
@@ -44,14 +49,24 @@ export default function KCUTeacher() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [stuRes, accRes, txRes] = await Promise.all([
+    const [stuRes, accRes, txRes, cRes, eRes, aRes, gRes, attRes] = await Promise.all([
       supabase.from('students').select('*').order('name'),
       supabase.from('kcu_accounts').select('*'),
       supabase.from('kcu_transactions').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('krown_courses').select('*'),
+      supabase.from('krown_enrollments').select('*'),
+      supabase.from('krown_assignments').select('*').order('due_date', { ascending: true }),
+      supabase.from('krown_grades').select('*'),
+      supabase.from('krown_attendance_log').select('*')
     ]);
     if (stuRes.data) setStudents(stuRes.data);
     if (accRes.data) setAccounts(accRes.data);
     if (txRes.data) setRecentTxs(txRes.data);
+    if (cRes?.data) setCourses(cRes.data);
+    if (eRes?.data) setEnrollments(eRes.data);
+    if (aRes?.data) setAssignments(aRes.data);
+    if (gRes?.data) setGrades(gRes.data);
+    if (attRes?.data) setAttendance(attRes.data);
     setLoading(false);
   }, []);
 
@@ -113,6 +128,7 @@ export default function KCUTeacher() {
         
         {/* TABS */}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, padding: 6, background: COLORS.white, borderRadius: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <button onClick={() => setActiveTab("Gradebook")} style={{ flex: 1, padding: "12px", background: activeTab === "Gradebook" ? COLORS.black : "transparent", color: activeTab === "Gradebook" ? COLORS.white : COLORS.textMuted, borderRadius: 8, fontWeight: 800, border: "none", cursor: "pointer", transition: "all 0.2s" }}>The Master Gradebook</button>
           <button onClick={() => setActiveTab("Banking")} style={{ flex: 1, padding: "12px", background: activeTab === "Banking" ? COLORS.black : "transparent", color: activeTab === "Banking" ? COLORS.white : COLORS.textMuted, borderRadius: 8, fontWeight: 800, border: "none", cursor: "pointer", transition: "all 0.2s" }}>KCU Banking</button>
           <button onClick={() => setActiveTab("Roster")} style={{ flex: 1, padding: "12px", background: activeTab === "Roster" ? COLORS.black : "transparent", color: activeTab === "Roster" ? COLORS.white : COLORS.textMuted, borderRadius: 8, fontWeight: 800, border: "none", cursor: "pointer", transition: "all 0.2s" }}>Student Roster Lookup</button>
         </div>
@@ -292,9 +308,185 @@ export default function KCUTeacher() {
             )}
           </div>
         )}
+        
+        {activeTab === "Gradebook" && (
+          <GradebookView teacherName={teacherName} courses={courses} enrollments={enrollments} students={students} assignments={assignments} grades={grades} attendance={attendance} fetchData={fetchData} showToast={showToast} />
+        )}
 
       </div>
       <Toast message={toast} type={toastType} />
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------
+// GRADEBOOK VIEW (Spreadsheet & Roll Call)
+// --------------------------------------------------------------------------------
+function GradebookView({ teacherName, courses, enrollments, students, assignments, grades, attendance, fetchData, showToast }) {
+  const teacherCourses = courses.filter(c => c.teacher_name === teacherName);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [activeSubTab, setActiveSubTab] = useState("Grades"); 
+  
+  // Auto-connect first course
+  React.useEffect(() => {
+    if(!selectedCourseId && teacherCourses.length > 0) setSelectedCourseId(teacherCourses[0].id);
+  }, [teacherCourses, selectedCourseId]);
+
+  if(teacherCourses.length === 0) {
+     return <div style={{ padding: 40, background: COLORS.white, borderRadius: 12, textAlign: "center", color: COLORS.textMuted, fontWeight: 600 }}>No courses assigned to your name ({teacherName}) yet. Admin must create a course in Command Center and assign you as the Instructor.</div>;
+  }
+
+  const course = teacherCourses.find(c => c.id === selectedCourseId) || teacherCourses[0];
+  if(!course) return null;
+
+  const rosterIds = enrollments.filter(e => e.course_id === course.id).map(e => e.student_id);
+  const roster = students.filter(s => rosterIds.includes(s.id));
+  const courseAssignments = assignments.filter(a => a.course_id === course.id);
+
+  const handleAddAssignment = async (e) => {
+    e.preventDefault();
+    const title = e.target.title.value;
+    const max_points = e.target.max_points.value;
+    const due_date = e.target.due_date.value;
+    await supabase.from('krown_assignments').insert({ course_id: course.id, title, max_points: parseFloat(max_points), due_date });
+    e.target.reset();
+    showToast("Assignment Created", "success");
+    fetchData();
+  };
+
+  const updateGrade = async (assignmentId, studentId, value) => {
+    const existing = grades.find(g => g.assignment_id === assignmentId && g.student_id === studentId);
+    let pts = value === "" ? null : parseFloat(value);
+    if(existing) {
+       await supabase.from('krown_grades').update({ points_earned: pts }).eq('id', existing.id);
+    } else {
+       if (pts !== null) await supabase.from('krown_grades').insert({ assignment_id: assignmentId, student_id: studentId, points_earned: pts });
+    }
+    fetchData(); // Silent background sync
+  };
+
+  const markAttendance = async (studentId, status) => {
+    const today = new Date().toISOString().split('T')[0];
+    const existing = attendance.find(a => a.student_id === studentId && a.course_id === course.id && a.date === today);
+    if(existing) {
+      await supabase.from('krown_attendance_log').update({ status }).eq('id', existing.id);
+    } else {
+      await supabase.from('krown_attendance_log').insert({ student_id: studentId, course_id: course.id, date: today, status, recorded_by: teacherName });
+    }
+    showToast(`${status} logged.`);
+    fetchData();
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <select value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)} style={{ padding: "12px 20px", borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, fontSize: 20, fontWeight: 800, color: COLORS.black, outline: "none" }}>
+          {teacherCourses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <div style={{ display: "flex", gap: 8, background: COLORS.white, padding: 6, borderRadius: 8 }}>
+          <button onClick={() => setActiveSubTab("Grades")} style={{ padding: "8px 16px", background: activeSubTab === "Grades" ? COLORS.black : "transparent", color: activeSubTab === "Grades" ? COLORS.white : COLORS.textMuted, border: "none", borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>Spreadsheet Gradebook</button>
+          <button onClick={() => setActiveSubTab("Attendance")} style={{ padding: "8px 16px", background: activeSubTab === "Attendance" ? COLORS.black : "transparent", color: activeSubTab === "Attendance" ? COLORS.white : COLORS.textMuted, border: "none", borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>Daily Roll Call Clicker</button>
+        </div>
+      </div>
+
+      {activeSubTab === "Grades" && (
+        <div style={{ background: COLORS.white, borderRadius: 12, padding: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+             <h3 style={{ fontSize: 18, fontWeight: 800 }}>Assignment Master Spread</h3>
+             
+             <form onSubmit={handleAddAssignment} style={{ display: "flex", gap: 12 }}>
+               <input name="title" placeholder="New Assignment Title..." required style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, fontSize: 13 }} />
+               <input name="max_points" type="number" placeholder="Max Pts (100)" defaultValue="100" required style={{ width: 100, padding: "8px 12px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, fontSize: 13 }} />
+               <input name="due_date" type="date" required style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, fontSize: 13 }} />
+               <button type="submit" style={{ background: COLORS.gold, color: COLORS.black, fontWeight: 800, border: "none", padding: "0 16px", borderRadius: 6, cursor: "pointer" }}>+ Add Column</button>
+             </form>
+           </div>
+
+           <div style={{ overflowX: "auto", position: "relative" }}>
+             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
+               <thead>
+                 <tr>
+                   <th style={{ textAlign: "left", padding: "16px", background: COLORS.black, color: COLORS.white, position: "sticky", left: 0, zIndex: 100, borderTopLeftRadius: 8 }}>Student Roster</th>
+                   <th style={{ padding: "16px 8px", background: COLORS.black, color: COLORS.gold, width: 80, textAlign: "center", fontSize: 13, textTransform: "uppercase", letterSpacing: 1 }}>Overall %</th>
+                   {courseAssignments.map(a => (
+                     <th key={a.id} style={{ padding: "12px 8px", background: COLORS.black, color: COLORS.white, textAlign: "center", minWidth: 100, borderLeft: "1px solid rgba(255,255,255,0.1)" }}>
+                       <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>{a.title}</div>
+                       <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{a.max_points} Pts &bull; {a.due_date ? new Date(a.due_date).toLocaleDateString() : ""}</div>
+                     </th>
+                   ))}
+                   {courseAssignments.length === 0 && <th style={{ background: COLORS.black, color: "rgba(255,255,255,0.5)", padding: 16, fontWeight: 500 }}>No assignments yet. Add one above.</th>}
+                 </tr>
+               </thead>
+               <tbody>
+                 {roster.map(stu => {
+                   let totalEarned = 0; let totalMax = 0;
+                   courseAssignments.forEach(a => {
+                     const g = grades.find(x => x.assignment_id === a.id && x.student_id === stu.id);
+                     if(g && g.points_earned !== null) { totalEarned += Number(g.points_earned); totalMax += Number(a.max_points); }
+                   });
+                   const overall = totalMax > 0 ? ((totalEarned / totalMax) * 100).toFixed(1) : "-";
+                   
+                   return (
+                     <tr key={stu.id} style={{ borderBottom: `1px solid ${COLORS.lightGray}` }}>
+                       <td style={{ padding: "12px 16px", fontWeight: 700, position: "sticky", left: 0, background: COLORS.white, zIndex: 10, borderRight: `2px solid ${COLORS.lightGray}` }}>{stu.name}</td>
+                       <td style={{ padding: "12px 8px", textAlign: "center", fontWeight: 800, color: overall < 60 && overall !== "-" ? COLORS.red : COLORS.black, background: COLORS.offWhite, fontSize: 16 }}>{overall === "-" ? "-" : `${overall}%`}</td>
+                       {courseAssignments.map(a => {
+                         const g = grades.find(x => x.assignment_id === a.id && x.student_id === stu.id);
+                         return (
+                           <td key={a.id} style={{ padding: "8px", textAlign: "center", borderLeft: `1px solid ${COLORS.lightGray}` }}>
+                             <input 
+                               type="number" 
+                               defaultValue={g?.points_earned !== null && g?.points_earned !== undefined ? g.points_earned : ""}
+                               onBlur={e => updateGrade(a.id, stu.id, e.target.value)}
+                               style={{ width: "80%", padding: "10px", textAlign: "center", border: `1px solid ${COLORS.lightGray}`, borderRadius: 6, fontWeight: 700, fontSize: 14, outlineColor: COLORS.gold, background: g?.points_earned !== null && g?.points_earned !== undefined ? "rgba(200,168,78,0.1)" : COLORS.white }}
+                             />
+                           </td>
+                         )
+                       })}
+                     </tr>
+                   )
+                 })}
+                 {roster.length === 0 && <tr><td colSpan={100} style={{ padding: 40, textAlign: "center", color: COLORS.textMuted }}>No students on your roster yet. Contact Administration.</td></tr>}
+               </tbody>
+             </table>
+           </div>
+        </div>
+      )}
+
+      {activeSubTab === "Attendance" && (
+        <div style={{ background: COLORS.white, borderRadius: 12, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 24 }}>
+            <div>
+               <h3 style={{ fontSize: 24, fontWeight: 800 }}>Rapid Roll Call Clicker</h3>
+               <div style={{ color: COLORS.textMuted, marginTop: 4 }}>Date locked to: <strong>{new Date().toLocaleDateString()}</strong></div>
+            </div>
+            <div style={{ fontSize: 13, background: COLORS.offWhite, padding: "8px 16px", borderRadius: 8, fontWeight: 600 }}>
+               Students without a click are automatically marked "Present" by default at EOD.
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+            {roster.map(stu => {
+              const todaysLog = attendance.find(a => a.student_id === stu.id && a.course_id === course.id && a.date === today);
+              const currentStatus = todaysLog?.status || "Unmarked";
+              return (
+                <div key={stu.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", background: COLORS.offWhite, borderRadius: 8, borderLeft: currentStatus === "Unmarked" ? "4px solid transparent" : currentStatus === "Present" ? `4px solid ${COLORS.green}` : currentStatus === "Tardy" ? `4px solid ${COLORS.gold}` : `4px solid ${COLORS.red}` }}>
+                   <div style={{ fontSize: 18, fontWeight: 800 }}>{stu.name}</div>
+                   <div style={{ display: "flex", gap: 8 }}>
+                     <button onClick={() => markAttendance(stu.id, "Present")} style={{ padding: "10px 20px", background: currentStatus === "Present" ? COLORS.green : COLORS.white, color: currentStatus === "Present" ? COLORS.white : COLORS.black, border: `1px solid ${currentStatus === "Present" ? COLORS.green : COLORS.lightGray}`, borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>Present</button>
+                     <button onClick={() => markAttendance(stu.id, "Tardy")} style={{ padding: "10px 20px", background: currentStatus === "Tardy" ? COLORS.gold : COLORS.white, color: currentStatus === "Tardy" ? COLORS.black : COLORS.black, border: `1px solid ${currentStatus === "Tardy" ? COLORS.gold : COLORS.lightGray}`, borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>Tardy</button>
+                     <button onClick={() => markAttendance(stu.id, "Absent")} style={{ padding: "10px 20px", background: currentStatus === "Absent" ? COLORS.red : COLORS.white, color: currentStatus === "Absent" ? COLORS.white : COLORS.black, border: `1px solid ${currentStatus === "Absent" ? COLORS.red : COLORS.lightGray}`, borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>Absent</button>
+                   </div>
+                </div>
+              )
+            })}
+             {roster.length === 0 && <div style={{ padding: 40, textAlign: "center", color: COLORS.textMuted }}>No students on your roster yet. Contact Administration.</div>}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
