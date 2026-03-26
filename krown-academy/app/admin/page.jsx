@@ -630,7 +630,7 @@ function StaffIdentitiesView({ profiles, fetchData }) {
             </div>
             
             <button type="submit" style={{ width: "100%", padding: 16, background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-              {formType === 'invite' ? 'Send Invitation &rarr;' : 'Provision Account &rarr;'}
+              {formType === 'invite' ? 'Send Invitation →' : 'Provision Account →'}
             </button>
             {status && <div style={{ marginTop: 16, fontSize: 13, fontWeight: 600, color: status.includes('Error') ? COLORS.red : COLORS.text }}>{status}</div>}
           </form>
