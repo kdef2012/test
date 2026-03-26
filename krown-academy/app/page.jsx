@@ -216,6 +216,12 @@ function FormModal({ activeForm, setActiveForm }) {
       
     setIsSubmitting(false);
     if (!error) {
+      fetch('/api/emails/enrollment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formType: form.title, appData: dataObj })
+      }).catch(err => console.error("Email failed:", err));
+
       setSuccess(true);
       setTimeout(() => setActiveForm(null), 3000);
     } else {
@@ -328,6 +334,11 @@ function Nav({ active, setActive }) {
           <a href="/calendar" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
             Calendar
           </a>
+          <a href="/kcu" style={{ color: COLORS.gold, fontSize: 13, fontWeight: 800, padding: "6px 12px", border: `1px solid ${COLORS.gold}`, borderRadius: 6, textDecoration: "none", transition: "all 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}
+            onMouseEnter={e => { e.target.style.background = COLORS.gold; e.target.style.color = COLORS.black; }}
+            onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.color = COLORS.gold; }}>
+            Student & Parent Portal
+          </a>
         </div>
         <button className="lg:hidden" onClick={() => setOpen(!open)} style={{ background: "none", border: "none", color: COLORS.white, fontSize: 24, cursor: "pointer" }}>
           {open ? "\u2715" : "\u2630"}
@@ -345,6 +356,9 @@ function Nav({ active, setActive }) {
           ))}
           <a href="/calendar" style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             Calendar
+          </a>
+          <a href="/kcu" style={{ display: "block", color: COLORS.gold, padding: "10px 0", fontSize: 16, fontWeight: 800, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            Student & Parent Portal
           </a>
         </div>
       )}
