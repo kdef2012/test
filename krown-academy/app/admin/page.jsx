@@ -350,7 +350,20 @@ function StudentsView({ students, applications, fetchData }) {
              </div>
            ))}
            {filteredStudents.length === 0 && <div style={{ fontSize: 13, color: COLORS.textMuted, textAlign: "center", padding: 20 }}>No students in this grade.</div>}
-         </div>
+          </div>
+         <button onClick={async () => {
+           const name = window.prompt("Enter the student's full name:");
+           if (!name) return;
+           const grade = window.prompt("Enter their grade level (e.g. '9th', '10th'):", "9th");
+           if (!grade) return;
+           const genId = 'KNDL' + Math.floor(100 + Math.random() * 900);
+           const genPin = Math.floor(1000 + Math.random() * 9000).toString();
+           await supabase.from('students').insert({ id: genId, name, grade, pin: genPin, credits_earned: 0, credits_needed: 22, taken: [], needed: [] });
+           alert(`Student Created!\n\nID: ${genId}\nPIN: ${genPin}\nName: ${name}`);
+           fetchData();
+         }} style={{ background: COLORS.black, color: COLORS.white, border: "none", padding: "12px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 8, transition: "opacity 0.2s" }} onMouseEnter={e => e.target.style.opacity = 0.8} onMouseLeave={e => e.target.style.opacity = 1}>
+           + Add Missing Student
+         </button>
        </div>
 
        <div style={{ flex: 1, background: COLORS.white, borderRadius: 12, padding: 40, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", maxHeight: "90vh", overflowY: "auto" }}>
