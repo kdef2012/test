@@ -27,6 +27,10 @@ export default function AdminPortal() {
   const [students, setStudents] = useState([]);
   const [logs, setLogs] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [athletes, setAthletes] = useState([]);
+  const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,17 +45,25 @@ export default function AdminPortal() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [appRes, stuRes, logRes, profRes] = await Promise.all([
+    const [appRes, stuRes, logRes, profRes, courseRes, enrollRes, athRes, schRes] = await Promise.all([
       supabase.from('applications').select('*').order('submitted_at', { ascending: false }),
       supabase.from('students').select('*').order('name'),
       supabase.from('mentoring_logs').select('*').order('logged_at', { ascending: false }),
-      supabase.from('profiles').select('*').order('created_at', { ascending: false })
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('krown_courses').select('*').order('name'),
+      supabase.from('krown_enrollments').select('*'),
+      supabase.from('krown_athletics_roster').select('*').order('created_at', { ascending: true }).catch(()=>({data:[]})),
+      supabase.from('krown_athletics_schedule').select('*').order('match_date', { ascending: true }).catch(()=>({data:[]}))
     ]);
     
     if (appRes.data) setApplications(appRes.data);
     if (stuRes.data) setStudents(stuRes.data);
     if (logRes.data) setLogs(logRes.data);
     if (profRes.data) setProfiles(profRes.data);
+    if (courseRes.data) setCourses(courseRes.data);
+    if (enrollRes.data) setEnrollments(enrollRes.data);
+    if (athRes?.data) setAthletes(athRes.data);
+    if (schRes?.data) setSchedules(schRes.data);
     setLoading(false);
   };
 
@@ -73,7 +85,7 @@ export default function AdminPortal() {
         </div>
         
         <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {["Dashboard", "Applications", "Students", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
+          {["Dashboard", "Applications", "Students", "Courses", "Athletics", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -99,6 +111,8 @@ export default function AdminPortal() {
         {activeTab === "Dashboard" && <DashboardView applications={applications} students={students} />}
         {activeTab === "Applications" && <ApplicationsView applications={applications} fetchData={fetchData} />}
         {activeTab === "Students" && <StudentsView students={students} applications={applications} fetchData={fetchData} />}
+        {activeTab === "Courses" && <CoursesView courses={courses} students={students} enrollments={enrollments} fetchData={fetchData} />}
+        {activeTab === "Athletics" && <AthleticsView athletes={athletes} schedules={schedules} fetchData={fetchData} />}
         {activeTab === "Mentoring" && <MentoringView students={students} logs={logs} fetchData={fetchData} />}
         {activeTab === "Emergencies" && <EmergenciesView students={students} applications={applications} />}
         {activeTab === "Staff & Identities" && <StaffIdentitiesView profiles={profiles} fetchData={fetchData} />}
@@ -845,6 +859,294 @@ function StaffIdentitiesView({ profiles, fetchData }) {
             )) : <p style={{ fontSize: 13, color: COLORS.textMuted }}>No profiles fetched. (Ensure RLS policies allow admin read access)</p>}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------
+// 7. COURSES & ROSTERS VIEW (Master Schedule)
+// --------------------------------------------------------------------------------
+function CoursesView({ courses, students, enrollments, fetchData }) {
+  const [showNewCourse, setShowNewCourse] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+
+  const handleCreateCourse = async (e) => {
+    e.preventDefault();
+    const name = e.target.name.value;
+    const teacher = e.target.teacher.value;
+    const credits = e.target.credits.value || 1;
+    
+    await supabase.from('krown_courses').insert({
+      name,
+      teacher_name: teacher,
+      credits: parseFloat(credits)
+    });
+    
+    setShowNewCourse(false);
+    fetchData();
+  };
+
+  const enrollStudent = async (studentId) => {
+    if(!selectedCourse) return;
+    await supabase.from('krown_enrollments').insert({
+      course_id: selectedCourse.id,
+      student_id: studentId
+    });
+    fetchData();
+  };
+
+  const removeEnrollment = async (enrollmentId) => {
+    await supabase.from('krown_enrollments').delete().eq('id', enrollmentId);
+    fetchData();
+  };
+
+  const courseEnrollments = selectedCourse ? enrollments.filter(e => e.course_id === selectedCourse.id) : [];
+  const enrolledStudentIds = courseEnrollments.map(e => e.student_id);
+
+  return (
+    <div style={{ display: "flex", gap: 32, height: "85vh" }}>
+      {/* Course List */}
+      <div style={{ width: 350, background: COLORS.white, borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: 20, borderBottom: `1px solid ${COLORS.lightGray}`, background: COLORS.black, color: COLORS.white, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700 }}>Master Schedule</h3>
+          <button onClick={() => setShowNewCourse(true)} style={{ background: COLORS.red, color: COLORS.white, border: "none", padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontWeight: 700 }}>+ New</button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {courses.map(c => (
+             <div key={c.id} onClick={() => { setSelectedCourse(c); setShowNewCourse(false); }} style={{ padding: 20, borderBottom: `1px solid ${COLORS.lightGray}`, cursor: "pointer", background: selectedCourse?.id === c.id ? COLORS.offWhite : "transparent" }}>
+               <div style={{ fontWeight: 800, fontSize: 16, color: COLORS.black }}>{c.name}</div>
+               <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 4 }}>Teacher: {c.teacher_name}</div>
+               <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.gold, marginTop: 8 }}>{enrollments.filter(e => e.course_id === c.id).length} Enrolled</div>
+             </div>
+          ))}
+          {courses.length === 0 && <div style={{ padding: 20, color: COLORS.textMuted, fontSize: 14 }}>No courses created yet.</div>}
+        </div>
+      </div>
+
+      {/* Detail Pane */}
+      <div style={{ flex: 1, background: COLORS.white, borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", padding: 40, overflowY: "auto" }}>
+        {showNewCourse ? (
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>Create New Course</h2>
+            <form onSubmit={handleCreateCourse} style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 400 }}>
+              <input name="name" placeholder="Course Name (e.g. Algebra I)" required style={{ padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+              <input name="teacher" placeholder="Instructor Name" required style={{ padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+              <input name="credits" type="number" step="0.5" placeholder="Credits (e.g. 1.0)" style={{ padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+              <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
+                <button type="button" onClick={() => setShowNewCourse(false)} style={{ flex: 1, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, background: "transparent", cursor: "pointer", fontWeight: 700 }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: 12, borderRadius: 8, border: "none", background: COLORS.black, color: COLORS.white, cursor: "pointer", fontWeight: 700 }}>Save Course</button>
+              </div>
+            </form>
+          </div>
+        ) : selectedCourse ? (
+          <div>
+            <div style={{ borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 24, marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: 14, color: COLORS.gold, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Course Details</div>
+                <h2 style={{ fontSize: 32, fontWeight: 800, color: COLORS.black }}>{selectedCourse.name}</h2>
+                <div style={{ fontSize: 16, color: COLORS.textMuted, marginTop: 4 }}>Instructor: {selectedCourse.teacher_name} &bull; {selectedCourse.credits} Credits</div>
+              </div>
+              <button onClick={async () => {
+                const conf = window.confirm("Are you sure you want to permanently delete this course and wipe its entire roster and gradebook?");
+                if(conf) {
+                  await supabase.from('krown_courses').delete().eq('id', selectedCourse.id);
+                  setSelectedCourse(null);
+                  fetchData();
+                }
+              }} style={{ background: "transparent", color: COLORS.red, border: "none", cursor: "pointer", fontWeight: 700 }}>Delete Course</button>
+            </div>
+
+            <div style={{ display: "flex", gap: 32 }}>
+              {/* Enrolled Roster */}
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Official Roster</h3>
+                {courseEnrollments.map(enr => {
+                  const s = students.find(xs => xs.id === enr.student_id);
+                  return (
+                    <div key={enr.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: COLORS.offWhite, borderRadius: 8, marginBottom: 8, border: `1px solid ${COLORS.lightGray}` }}>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>{s?.name || "Unknown Student"}</div>
+                        <div style={{ fontSize: 12, color: COLORS.textMuted }}>{s?.grade} &bull; ID: {s?.id}</div>
+                      </div>
+                      <button onClick={() => removeEnrollment(enr.id)} style={{ background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontWeight: 800 }}>Drop</button>
+                    </div>
+                  )
+                })}
+                {courseEnrollments.length === 0 && <div style={{ fontSize: 14, color: COLORS.textMuted }}>No students currently enrolled.</div>}
+              </div>
+
+              {/* Add Students */}
+              <div style={{ width: 300 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Add to Roster</h3>
+                <div style={{ maxHeight: 400, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, paddingRight: 8 }}>
+                  {students.filter(s => !enrolledStudentIds.includes(s.id)).map(s => (
+                    <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 12, border: `1px solid ${COLORS.lightGray}`, borderRadius: 8 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</div>
+                      <button onClick={() => enrollStudent(s.id)} style={{ background: COLORS.black, color: COLORS.white, border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "background 0.2s" }} onMouseEnter={e => e.target.style.background = COLORS.gold} onMouseLeave={e => e.target.style.background = COLORS.black}>Add</button>
+                    </div>
+                  ))}
+                  {students.filter(s => !enrolledStudentIds.includes(s.id)).length === 0 && <div style={{ fontSize: 13, color: COLORS.textMuted }}>All active students are enrolled in this course.</div>}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.textMuted, fontSize: 16, fontWeight: 500 }}>
+            Select a course to view its roster or create a new one.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------
+// 8. ATHLETICS VIEW (Sports Roster & Schedule CMS)
+// --------------------------------------------------------------------------------
+function AthleticsView({ athletes, schedules, fetchData }) {
+  const [activeTab, setActiveTab] = useState("Roster");
+  
+  const handleAddAthlete = async (e) => {
+    e.preventDefault();
+    await supabase.from('krown_athletics_roster').insert({
+      sport: e.target.sport.value,
+      student_name: e.target.name.value,
+      grade: e.target.grade.value,
+      weight_class: e.target.weight.value || null,
+      jersey_number: e.target.jersey.value || null,
+      position: e.target.position.value || null,
+      bio: e.target.bio.value || null,
+      is_athlete_of_week: e.target.aotw.checked
+    });
+    e.target.reset();
+    fetchData();
+  };
+
+  const handleAddMatch = async (e) => {
+    e.preventDefault();
+    await supabase.from('krown_athletics_schedule').insert({
+      sport: e.target.sport.value,
+      opponent: e.target.opponent.value,
+      match_date: e.target.date.value,
+      match_time: e.target.time.value,
+      location: e.target.location.value
+    });
+    e.target.reset();
+    fetchData();
+  };
+
+  const removeAthlete = async (id) => {
+    if(window.confirm("Remove this athlete from the active roster?")) {
+      await supabase.from('krown_athletics_roster').delete().eq('id', id);
+      fetchData();
+    }
+  };
+
+  const updateMatchResult = async (id, result) => {
+    await supabase.from('krown_athletics_schedule').update({ result }).eq('id', id);
+    fetchData();
+  };
+
+  return (
+    <div style={{ background: COLORS.white, borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", overflow: "hidden" }}>
+      <div style={{ background: COLORS.black, padding: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: COLORS.white }}>Athletics CMS</h2>
+          <div style={{ color: COLORS.gold, fontSize: 13, fontWeight: 600, marginTop: 4 }}>Manage public Krown Knights rosters and schedules</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setActiveTab("Roster")} style={{ padding: "8px 16px", background: activeTab === "Roster" ? COLORS.gold : "transparent", color: activeTab === "Roster" ? COLORS.black : COLORS.white, border: `1px solid ${COLORS.gold}`, borderRadius: 6, fontWeight: 800, cursor: "pointer" }}>Active Rosters</button>
+          <button onClick={() => setActiveTab("Schedule")} style={{ padding: "8px 16px", background: activeTab === "Schedule" ? COLORS.gold : "transparent", color: activeTab === "Schedule" ? COLORS.black : COLORS.white, border: `1px solid ${COLORS.gold}`, borderRadius: 6, fontWeight: 800, cursor: "pointer" }}>Season Schedules</button>
+        </div>
+      </div>
+
+      <div style={{ padding: 32 }}>
+        {activeTab === "Roster" && (
+          <div style={{ display: "flex", gap: 32 }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Add New Athlete</h3>
+              <form onSubmit={handleAddAthlete} style={{ display: "flex", flexDirection: "column", gap: 12, background: COLORS.offWhite, padding: 24, borderRadius: 12, border: `1px solid ${COLORS.lightGray}` }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <select name="sport" required style={{ flex: 1, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }}>
+                    <option value="Wrestling">Wrestling</option>
+                    <option value="Basketball">Basketball</option>
+                    <option value="Track & Field">Track & Field</option>
+                  </select>
+                  <input name="grade" placeholder="Grade (e.g. 10th)" required style={{ width: 120, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                </div>
+                <input name="name" placeholder="Athlete Full Name" required style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <input name="weight" placeholder="Weight Class (-)" style={{ flex: 1, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                  <input name="jersey" placeholder="Jersey #" style={{ width: 100, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                  <input name="position" placeholder="Position / Role" style={{ flex: 1, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                </div>
+                <textarea name="bio" placeholder="Short bio or notable achievements (Optional)" style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, minHeight: 80 }} />
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                  <input type="checkbox" name="aotw" /> Promote as "Athlete of the Week"
+                </label>
+                <button type="submit" style={{ background: COLORS.black, color: COLORS.white, fontWeight: 800, border: "none", padding: 14, borderRadius: 8, cursor: "pointer", marginTop: 8 }}>+ Add to Roster</button>
+              </form>
+            </div>
+            <div style={{ flex: 1, maxHeight: 600, overflowY: "auto" }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Current Active Rosters ({athletes.length})</h3>
+              {athletes.length === 0 ? <p style={{ color: COLORS.textMuted }}>No athletes found.</p> : athletes.map(a => (
+                <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, borderBottom: `1px solid ${COLORS.lightGray}`, background: a.is_athlete_of_week ? "rgba(200,168,78,0.1)" : "transparent" }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 16 }}>{a.student_name} <span style={{ fontWeight: 500, color: COLORS.textMuted, fontSize: 13, marginLeft: 8 }}>({a.grade})</span></div>
+                    <div style={{ fontSize: 13, color: COLORS.red, fontWeight: 800, marginTop: 4 }}>{a.sport} {a.weight_class ? `• ${a.weight_class}` : ""} {a.jersey_number ? `• #${a.jersey_number}` : ""}</div>
+                    {a.is_athlete_of_week && <div style={{ fontSize: 11, background: COLORS.gold, color: COLORS.black, padding: "2px 8px", borderRadius: 4, display: "inline-block", fontWeight: 800, marginTop: 6 }}>ATHLETE OF THE WEEK</div>}
+                  </div>
+                  <button onClick={() => removeAthlete(a.id)} style={{ color: COLORS.red, background: "transparent", border: "none", cursor: "pointer", fontWeight: 800 }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "Schedule" && (
+          <div style={{ display: "flex", gap: 32 }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Add Match / Game</h3>
+              <form onSubmit={handleAddMatch} style={{ display: "flex", flexDirection: "column", gap: 12, background: COLORS.offWhite, padding: 24, borderRadius: 12, border: `1px solid ${COLORS.lightGray}` }}>
+                <select name="sport" required style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }}>
+                  <option value="Wrestling">Wrestling</option>
+                  <option value="Basketball">Basketball</option>
+                  <option value="Track & Field">Track & Field</option>
+                </select>
+                <input name="opponent" placeholder="Opponent Name" required style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <input name="date" type="date" required style={{ flex: 1, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                  <input name="time" type="time" required style={{ flex: 1, padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                </div>
+                <input name="location" placeholder="Location (e.g. Home, Away, Address)" required style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                <button type="submit" style={{ background: COLORS.black, color: COLORS.white, fontWeight: 800, border: "none", padding: 14, borderRadius: 8, cursor: "pointer", marginTop: 8 }}>+ Add to Schedule</button>
+              </form>
+            </div>
+            <div style={{ flex: 1.5, maxHeight: 600, overflowY: "auto" }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Upcoming & Past Events ({schedules.length})</h3>
+              {schedules.length === 0 ? <p style={{ color: COLORS.textMuted }}>No events scheduled.</p> : schedules.map(s => (
+                 <div key={s.id} style={{ padding: 16, borderBottom: `1px solid ${COLORS.lightGray}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                   <div>
+                     <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1 }}>{s.sport.toUpperCase()} • {new Date(s.match_date).toLocaleDateString()} @ {s.match_time}</div>
+                     <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>vs. {s.opponent}</div>
+                     <div style={{ fontSize: 13, color: COLORS.red, fontWeight: 700, marginTop: 4 }}>{s.location}</div>
+                   </div>
+                   <div style={{ textAlign: "right" }}>
+                     <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, marginBottom: 6 }}>RESULT (Optional)</div>
+                     <input 
+                       defaultValue={s.result || ""} 
+                       onBlur={e => updateMatchResult(s.id, e.target.value)} 
+                       placeholder="e.g. W 45-30"
+                       style={{ width: 100, padding: "8px 12px", borderRadius: 6, border: `1px solid ${COLORS.lightGray}`, textAlign: "center", fontWeight: 800 }}
+                     />
+                     <button onClick={async () => { if(window.confirm("Delete match?")) { await supabase.from('krown_athletics_schedule').delete().eq('id', s.id); fetchData(); } }} style={{ display: "block", width: "100%", marginTop: 8, color: COLORS.red, background: "transparent", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Delete</button>
+                   </div>
+                 </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
