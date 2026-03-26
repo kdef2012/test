@@ -358,7 +358,11 @@ function StudentsView({ students, applications, fetchData }) {
            if (!grade) return;
            const genId = 'KNDL' + Math.floor(100 + Math.random() * 900);
            const genPin = Math.floor(1000 + Math.random() * 9000).toString();
-           await supabase.from('students').insert({ id: genId, name, grade, pin: genPin, credits_earned: 0, credits_needed: 22, taken: [], needed: [] });
+           const { error } = await supabase.from('students').insert({ id: genId, name, grade, pin: genPin, credits_earned: 0, credits_needed: 22, taken: [], needed: [] });
+           if (error) {
+             alert("Error saving student to the database. Are you sure you have Permissions (RLS) setup for 'students'?\n\n" + error.message);
+             return;
+           }
            alert(`Student Created!\n\nID: ${genId}\nPIN: ${genPin}\nName: ${name}`);
            fetchData();
          }} style={{ background: COLORS.black, color: COLORS.white, border: "none", padding: "12px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 8, transition: "opacity 0.2s" }} onMouseEnter={e => e.target.style.opacity = 0.8} onMouseLeave={e => e.target.style.opacity = 1}>
