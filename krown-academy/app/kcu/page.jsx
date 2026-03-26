@@ -21,7 +21,13 @@ export default function KCUPortal() {
   const [account, setAccount] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [bizPlan, setBizPlan] = useState(null);
-  const [tab, setTab] = useState("balance");
+  const [tab, setTab] = useState("academics");
+  
+  const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [showBizForm, setShowBizForm] = useState(false);
   const [bizForm, setBizForm] = useState({ business_name: "", executive_summary: "", product_or_service: "", target_market: "", marketing_plan: "", investment_requested: "", projected_revenue: "", projected_expenses: "", timeline: "", risk_assessment: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -47,14 +53,26 @@ export default function KCUPortal() {
       acc = newAcc;
     }
     
-    // 3. Dig up Transactions and Business Plans
-    const { data: txs } = await supabase.from('kcu_transactions').select('*').eq('student_id', stu.id).order('created_at', { ascending: false });
-    const { data: plans } = await supabase.from('kcu_business_plans').select('*').eq('student_id', stu.id).order('created_at', { ascending: false }).limit(1);
+    // 3. Dig up Transactions and Relational DB tables
+    const [txRes, plansRes, cRes, eRes, aRes, gRes, attRes] = await Promise.all([
+      supabase.from('kcu_transactions').select('*').eq('student_id', stu.id).order('created_at', { ascending: false }),
+      supabase.from('kcu_business_plans').select('*').eq('student_id', stu.id).order('created_at', { ascending: false }).limit(1),
+      supabase.from('krown_courses').select('*'),
+      supabase.from('krown_enrollments').select('*').eq('student_id', stu.id),
+      supabase.from('krown_assignments').select('*').order('due_date', { ascending: true }),
+      supabase.from('krown_grades').select('*').eq('student_id', stu.id),
+      supabase.from('krown_attendance_log').select('*').eq('student_id', stu.id).order('date', { ascending: false })
+    ]);
     
     setStudent(stu);
     setAccount(acc);
-    if (txs) setTransactions(txs);
-    if (plans && plans.length > 0) setBizPlan(plans[0]);
+    if (txRes?.data) setTransactions(txRes.data);
+    if (plansRes?.data?.length > 0) setBizPlan(plansRes.data[0]);
+    if (cRes?.data) setCourses(cRes.data);
+    if (eRes?.data) setEnrollments(eRes.data);
+    if (aRes?.data) setAssignments(aRes.data);
+    if (gRes?.data) setGrades(gRes.data);
+    if (attRes?.data) setAttendance(attRes.data);
     
     setSession(true);
     setAuthenticating(false);
@@ -166,7 +184,7 @@ export default function KCUPortal() {
       {/* TABS */}
       <div style={{ maxWidth: 640, margin: "32px auto 0", padding: "0 16px" }}>
         <div style={{ display: "flex", gap: 0, background: COLORS.white, borderRadius: 12, overflow: "hidden", border: `1px solid ${COLORS.lightGray}`, boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
-          {["academics", "banking", "business", "mentoring"].map(t => (
+          {["academics", "roundtable", "banking", "business", "mentoring"].map(t => (
             <button key={t} onClick={() => setTab(t)}
               style={{ flex: 1, padding: "16px 4px", background: tab === t ? COLORS.black : "transparent", color: tab === t ? COLORS.white : COLORS.textMuted, border: "none", fontSize: 12, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5, transition: "all 0.2s" }}>
               {t}
@@ -182,24 +200,64 @@ export default function KCUPortal() {
         {tab === "academics" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
              <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
-               <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 20, color: COLORS.black }}>Live Gradebook</h3>
-               {Object.keys(student.grades_in_progress || {}).length > 0 ? (
-                 Object.entries(student.grades_in_progress).map(([subj, grd]) => (
-                   <div key={subj} style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, padding: 16, background: COLORS.offWhite, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }}>
-                     <span style={{ fontWeight: 800, fontSize: 15 }}>{subj}</span>
-                     <span style={{ fontWeight: 900, color: COLORS.gold, fontSize: 16 }}>{grd}</span>
-                   </div>
-                 ))
-               ) : <div style={{ fontSize: 14, color: COLORS.textMuted, textAlign: "center", padding: 20 }}>No grades published yet.</div>}
+               <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 20, color: COLORS.black }}>Live Gradebook (Relational)</h3>
+               {enrollments.length > 0 ? enrollments.map(enr => {
+                 const course = courses.find(c => c.id === enr.course_id);
+                 if(!course) return null;
+                 const courseAssignments = assignments.filter(a => a.course_id === course.id);
+                 
+                 let max = 0; let earned = 0;
+                 courseAssignments.forEach(a => {
+                   const g = grades.find(g => g.assignment_id === a.id);
+                   if(g && g.points_earned !== null) { max += Number(a.max_points); earned += Number(g.points_earned); }
+                 });
+                 const isGraded = max > 0;
+                 const pct = isGraded ? ((earned / max) * 100).toFixed(1) : "N/A";
+                 
+                 return (
+                   <details key={enr.id} style={{ marginBottom: 16, background: COLORS.offWhite, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, overflow: "hidden" }}>
+                     <summary style={{ padding: 16, fontWeight: 800, fontSize: 16, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", listStyle: "none" }}>
+                       <div>{course.name} <span style={{ fontSize: 13, color: COLORS.textMuted, fontWeight: 600, marginLeft: 8 }}>{course.teacher_name}</span></div>
+                       <div style={{ color: !isGraded ? COLORS.textMuted : pct < 60 ? COLORS.red : COLORS.gold, fontWeight: 900 }}>{isGraded ? `${pct}%` : "No Grades"}</div>
+                     </summary>
+                     {courseAssignments.length > 0 ? (
+                       <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${COLORS.lightGray}` }}>
+                         {courseAssignments.map(a => {
+                           const g = grades.find(x => x.assignment_id === a.id);
+                           const pts = g?.points_earned;
+                           return (
+                             <div key={a.id} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${COLORS.lightGray}`, fontSize: 14 }}>
+                               <div>
+                                 <div style={{ fontWeight: 700 }}>{a.title}</div>
+                                 <div style={{ fontSize: 12, color: COLORS.textMuted }}>Due: {new Date(a.due_date).toLocaleDateString()}</div>
+                               </div>
+                               <div style={{ fontWeight: 800, color: pts === null || pts === undefined ? COLORS.textMuted : COLORS.black }}>
+                                 {pts === null || pts === undefined ? "-" : pts} / {a.max_points}
+                               </div>
+                             </div>
+                           )
+                         })}
+                       </div>
+                     ) : <div style={{ padding: "16px", fontSize: 13, color: COLORS.textMuted }}>No assignments posted for this course.</div>}
+                   </details>
+                 )
+               }) : <div style={{ fontSize: 14, color: COLORS.textMuted, textAlign: "center", padding: 20 }}>Not currently officially enrolled in any master courses.</div>}
              </div>
 
              <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
-               <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 20, color: COLORS.black }}>Attendance Records</h3>
-               {(student.attendance_records || []).length > 0 ? (
-                 (student.attendance_records).map((rec, idx) => (
-                   <div key={idx} style={{ padding: 14, background: COLORS.offWhite, borderRadius: 8, marginBottom: 10, fontSize: 14, fontWeight: 700, borderLeft: `4px solid ${COLORS.red}` }}>{rec}</div>
-                 ))
-               ) : <div style={{ fontSize: 14, color: COLORS.green, fontWeight: 800, textAlign: "center", padding: "20px 0" }}>✨ Perfect attendance! No absences logged.</div>}
+               <h3 style={{ fontSize: 18, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 16, marginBottom: 20, color: COLORS.black }}>Official Attendance Log</h3>
+               {attendance.length > 0 ? (
+                 attendance.slice(0, 10).map((a) => {
+                   const course = courses.find(c => c.id === a.course_id);
+                   const statusColor = a.status === "Present" ? COLORS.green : a.status === "Tardy" ? COLORS.gold : COLORS.red;
+                   return (
+                     <div key={a.id} style={{ padding: 14, background: COLORS.offWhite, borderRadius: 8, marginBottom: 10, fontSize: 14, display: "flex", justifyContent: "space-between", alignItems: "center", borderLeft: `4px solid ${statusColor}` }}>
+                       <div><span style={{ fontWeight: 800 }}>{new Date(a.date).toLocaleDateString()}</span> &bull; {course?.name}</div>
+                       <div style={{ fontWeight: 900, color: statusColor }}>{a.status}</div>
+                     </div>
+                   );
+                 })
+               ) : <div style={{ fontSize: 14, color: COLORS.green, fontWeight: 800, textAlign: "center", padding: "20px 0" }}>✨ Perfect attendance! No records logged yet.</div>}
              </div>
              
              <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)", textAlign: "center" }}>
@@ -207,6 +265,20 @@ export default function KCUPortal() {
                <div style={{ fontSize: 48, fontWeight: 900, color: COLORS.gold, margin: "12px 0" }}>{student.credits_earned} / 22</div>
                <div style={{ fontSize: 14, color: COLORS.text, fontWeight: 600 }}>Total High School Credits Earned</div>
              </div>
+          </div>
+        )}
+
+        {/* ROUNDTABLE RECAP */}
+        {tab === "roundtable" && (
+          <div style={{ background: COLORS.white, borderRadius: 16, padding: 48, textAlign: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+            <div style={{ fontSize: 64, marginBottom: 20 }}>🦉</div>
+            <h3 style={{ fontSize: 28, fontWeight: 900, color: COLORS.black, marginBottom: 12 }}>Roundtable Recap</h3>
+            <p style={{ color: COLORS.textMuted, fontSize: 16, lineHeight: 1.6, maxWidth: 500, margin: "0 auto 32px" }}>
+              The native port of the Ticket Owl platform is currently underway. Soon, you will be able to complete your Exit Tickets, test EOG Practice questions, and review your AI Notebook directly from the unified Krown Academy Family Hub.
+            </p>
+            <div style={{ padding: "16px 32px", background: "rgba(200,168,78,0.1)", color: COLORS.gold, borderRadius: 12, display: "inline-block", fontWeight: 800, letterSpacing: 1 }}>
+              SYSTEM MIGRATION IN PROGRESS
+            </div>
           </div>
         )}
 
