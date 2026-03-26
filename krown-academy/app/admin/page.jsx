@@ -45,26 +45,35 @@ export default function AdminPortal() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [appRes, stuRes, logRes, profRes, courseRes, enrollRes, athRes, schRes] = await Promise.all([
-      supabase.from('applications').select('*').order('submitted_at', { ascending: false }),
-      supabase.from('students').select('*').order('name'),
-      supabase.from('mentoring_logs').select('*').order('logged_at', { ascending: false }),
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('krown_courses').select('*').order('name'),
-      supabase.from('krown_enrollments').select('*'),
-      supabase.from('krown_athletics_roster').select('*').order('created_at', { ascending: true }).catch(()=>({data:[]})),
-      supabase.from('krown_athletics_schedule').select('*').order('match_date', { ascending: true }).catch(()=>({data:[]}))
-    ]);
-    
-    if (appRes.data) setApplications(appRes.data);
-    if (stuRes.data) setStudents(stuRes.data);
-    if (logRes.data) setLogs(logRes.data);
-    if (profRes.data) setProfiles(profRes.data);
-    if (courseRes.data) setCourses(courseRes.data);
-    if (enrollRes.data) setEnrollments(enrollRes.data);
-    if (athRes?.data) setAthletes(athRes.data);
-    if (schRes?.data) setSchedules(schRes.data);
-    setLoading(false);
+    try {
+      const [appRes, stuRes, logRes, profRes, courseRes, enrollRes, athRes, schRes] = await Promise.all([
+        supabase.from('applications').select('*').order('submitted_at', { ascending: false }),
+        supabase.from('students').select('*').order('name'),
+        supabase.from('mentoring_logs').select('*').order('logged_at', { ascending: false }),
+        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+        supabase.from('krown_courses').select('*').order('name'),
+        supabase.from('krown_enrollments').select('*'),
+        supabase.from('krown_athletics_roster').select('*').order('created_at', { ascending: true }),
+        supabase.from('krown_athletics_schedule').select('*').order('match_date', { ascending: true })
+      ]);
+      
+      if (stuRes.error) console.error("Students Fetch Error:", stuRes.error);
+      if (athRes && athRes.error) console.error("Athletics Fetch Error:", athRes.error);
+      
+      if (appRes.data) setApplications(appRes.data);
+      if (stuRes.data) setStudents(stuRes.data);
+      if (logRes.data) setLogs(logRes.data);
+      if (profRes.data) setProfiles(profRes.data);
+      if (courseRes.data) setCourses(courseRes.data);
+      if (enrollRes.data) setEnrollments(enrollRes.data);
+      if (athRes?.data) setAthletes(athRes.data);
+      if (schRes?.data) setSchedules(schRes.data);
+    } catch (err) {
+      console.error("Critical FetchData Error:", err);
+      // Safely ignore, the UI will just show empty arrays
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (authLoading || !user || role !== 'admin') {
