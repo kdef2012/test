@@ -1,8 +1,6 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../../utils/supabase';
-import { useAuth } from '../../context/AuthContext';
-import { useRouter } from 'next/navigation';
 
 const COLORS = {
   red: "#C41E1E", black: "#000000", gold: "#C8A84E", white: "#FFFFFF",
@@ -13,8 +11,11 @@ const COLORS = {
 function formatMoney(n) { return "$" + Number(n || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'); }
 
 export default function KCUPortal() {
-  const { user, profile, role, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const [session, setSession] = useState(false);
+  const [loginId, setLoginId] = useState("");
+  const [loginPin, setLoginPin] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [authenticating, setAuthenticating] = useState(false);
 
   const [student, setStudent] = useState(null);
   const [account, setAccount] = useState(null);
@@ -25,30 +26,38 @@ export default function KCUPortal() {
   const [bizForm, setBizForm] = useState({ business_name: "", executive_summary: "", product_or_service: "", target_market: "", marketing_plan: "", investment_requested: "", projected_revenue: "", projected_expenses: "", timeline: "", risk_assessment: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user || !['student', 'parent', 'admin'].includes(role)) {
-        router.push('/login');
-      } else if (profile?.student_id) {
-        fetchStudentData(profile.student_id);
-      }
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setAuthenticating(true);
+    
+    // 1. Verify Student
+    const { data: stu, error: stuErr } = await supabase.from('students').select('*').eq('id', loginId.toUpperCase().trim()).eq('pin', loginPin.trim()).single();
+    
+    if (stuErr || !stu) {
+      setLoginError("Invalid KNDL ID or PIN.");
+      setAuthenticating(false);
+      return;
     }
-  }, [user, profile, role, authLoading, router]);
 
-  const fetchStudentData = async (studentId) => {
-    const { data: stu } = await supabase.from('students').select('*').eq('id', studentId).single();
-    if (!stu) return;
-    const { data: acc } = await supabase.from('kcu_accounts').select('*').eq('student_id', studentId).single();
-    if (!acc) return;
+    // 2. Fetch or Create KCU Account
+    let { data: acc } = await supabase.from('kcu_accounts').select('*').eq('student_id', stu.id).single();
+    if (!acc) {
+      const { data: newAcc } = await supabase.from('kcu_accounts').insert({ student_id: stu.id, balance: 0, business_status: 'none' }).select().single();
+      acc = newAcc;
+    }
+    
+    // 3. Dig up Transactions and Business Plans
+    const { data: txs } = await supabase.from('kcu_transactions').select('*').eq('student_id', stu.id).order('created_at', { ascending: false });
+    const { data: plans } = await supabase.from('kcu_business_plans').select('*').eq('student_id', stu.id).order('created_at', { ascending: false }).limit(1);
     
     setStudent(stu);
     setAccount(acc);
-    // Fetch transactions
-    const { data: txs } = await supabase.from('kcu_transactions').select('*').eq('student_id', studentId).order('created_at', { ascending: false });
     if (txs) setTransactions(txs);
-    // Fetch business plan
-    const { data: plans } = await supabase.from('kcu_business_plans').select('*').eq('student_id', studentId).order('created_at', { ascending: false }).limit(1);
     if (plans && plans.length > 0) setBizPlan(plans[0]);
+    
+    setSession(true);
+    setAuthenticating(false);
   };
 
   const submitBizPlan = async (e) => {
@@ -64,27 +73,41 @@ export default function KCUPortal() {
     });
     setShowBizForm(false);
     setSubmitting(false);
-    if (!error) {
-      // Alert Coach
-      fetch('/api/emails/business', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: student.id, businessName: bizForm.business_name, requestedAmount: bizForm.investment_requested, matchOption: 'N/A' })
-      }).catch(err => console.error(err));
+    
+    fetch('/api/emails/business', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId: student.id, businessName: bizForm.business_name, requestedAmount: bizForm.investment_requested, matchOption: 'N/A' })
+    }).catch(err => console.error(err));
 
-      // setBizSuccess(true); // This line was in the provided snippet but not in the original code. Assuming it's meant to be added.
-      // fetchData(); // This line was in the provided snippet but not in the original code. Assuming it's meant to be added.
-    }
-    // Refresh
     const { data: plans } = await supabase.from('kcu_business_plans').select('*').eq('student_id', student.id).order('created_at', { ascending: false }).limit(1);
     if (plans && plans.length > 0) setBizPlan(plans[0]);
   };
 
-  // SECURE LOADING SCREEN
-  if (authLoading || !user || !account || !student) {
+  if (!session || !student || !account) {
     return (
-      <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${COLORS.black} 0%, #1a0f00 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <p style={{ color: COLORS.gold, fontSize: 14, fontWeight: 800, letterSpacing: 2 }}>LOADING KCU VAULT...</p>
+      <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${COLORS.black} 0%, #1a0f00 100%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ background: COLORS.white, borderRadius: 20, padding: 48, width: "100%", maxWidth: 440, boxShadow: "0 12px 40px rgba(0,0,0,0.5)", textAlign: "center" }}>
+           <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 28, fontWeight: 900, color: COLORS.gold, letterSpacing: 2, marginBottom: 8 }}>STUDENT PORTAL</h1>
+           <p style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 32, fontWeight: 500 }}>Enter your ID and PIN to access the Family Hub</p>
+           
+           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+             <input type="text" placeholder="Student ID (e.g. KNDL105)" value={loginId} onChange={e => setLoginId(e.target.value)} required
+               style={{ width: "100%", padding: 16, borderRadius: 10, border: `2px solid ${COLORS.lightGray}`, fontSize: 16, boxSizing: "border-box", textAlign: "center", letterSpacing: 2, fontWeight: 800, textTransform: "uppercase" }} />
+             
+             <input type="password" placeholder="4-Digit PIN" value={loginPin} onChange={e => setLoginPin(e.target.value)} required maxLength={4}
+               style={{ width: "100%", padding: 16, borderRadius: 10, border: `2px solid ${COLORS.lightGray}`, fontSize: 16, boxSizing: "border-box", textAlign: "center", letterSpacing: 4, fontWeight: 800 }} />
+             
+             {loginError && <div style={{ color: COLORS.red, fontSize: 13, fontWeight: 800, letterSpacing: 1 }}>{loginError}</div>}
+             
+             <button type="submit" disabled={authenticating} style={{ width: "100%", padding: 16, background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 10, fontSize: 15, fontWeight: 900, cursor: "pointer", marginTop: 8, letterSpacing: 1 }}>
+               {authenticating ? "AUTHENTICATING..." : "SECURE LOGIN"}
+             </button>
+           </form>
+        </div>
+        <div style={{ marginTop: 32 }}>
+          <a href="/" style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, textDecoration: "none", fontWeight: 700, letterSpacing: 1 }}>← RETURN TO HOME</a>
+        </div>
       </div>
     );
   }
@@ -98,9 +121,10 @@ export default function KCUPortal() {
   return (
     <div style={{ minHeight: "100vh", background: COLORS.offWhite }}>
       {/* HEADER */}
-      <div style={{ background: COLORS.black, padding: "24px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 12, color: COLORS.gold, letterSpacing: 3, fontWeight: 700, textTransform: "uppercase" }}>Krown Credit Union</div>
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>Welcome, {student.name}</div>
+      <div style={{ background: COLORS.black, padding: "24px 20px", textAlign: "center", position: "relative" }}>
+        <button onClick={() => setSession(false)} style={{ position: "absolute", right: 20, top: 24, background: "rgba(255,255,255,0.1)", color: COLORS.white, border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer" }}>LOGOUT</button>
+        <div style={{ fontSize: 12, color: COLORS.gold, letterSpacing: 3, fontWeight: 800, textTransform: "uppercase" }}>Unified Family Hub</div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", marginTop: 8, fontWeight: 700 }}>Welcome, {student.name}</div>
       </div>
 
       {/* BALANCE CARD */}
