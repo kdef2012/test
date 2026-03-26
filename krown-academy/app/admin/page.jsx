@@ -111,7 +111,7 @@ export default function AdminPortal() {
 // 1. DASHBOARD VIEW
 // --------------------------------------------------------------------------------
 function DashboardView({ applications, students }) {
-  const pendingApps = applications.filter(a => a.status === 'Pending').length;
+  const pendingApps = applications.filter(a => !a.status || a.status === 'Pending').length;
   const avgReady = students.length ? Math.round((students.reduce((sum, s) => sum + (s.credits_earned / s.credits_needed), 0) / students.length) * 100) : 0;
   const fullyFunded = students.filter(s => s.funding_status === 'Approved').length;
 
@@ -164,8 +164,8 @@ function ApplicationsView({ applications, fetchData }) {
     fetchData();
   };
 
-  const pending = applications.filter(a => a.status === 'Pending');
-  const processed = applications.filter(a => a.status !== 'Pending');
+  const pending = applications.filter(a => !a.status || a.status === 'Pending');
+  const processed = applications.filter(a => a.status && a.status !== 'Pending');
 
   return (
     <div style={{ display: "flex", gap: 32, height: "85vh" }}>
@@ -203,7 +203,7 @@ function ApplicationsView({ applications, fetchData }) {
                 <div style={{ fontSize: 14, color: COLORS.textMuted, marginTop: 4 }}>Submitted: {new Date(selectedApp.submitted_at).toLocaleString()}</div>
               </div>
               <div style={{ display: "flex", gap: 12 }}>
-                {selectedApp.status === "Pending" ? (
+                {!selectedApp.status || selectedApp.status === "Pending" ? (
                   <>
                     <button onClick={() => updateStatus(selectedApp.id, 'Rejected')} style={{ padding: "10px 20px", background: COLORS.lightGray, color: COLORS.black, border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                     <button onClick={() => updateStatus(selectedApp.id, 'Waitlisted')} style={{ padding: "10px 20px", background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>Waitlist</button>
@@ -555,6 +555,103 @@ function EmergenciesView({ students, applications }) {
            </div>
          </div>
        )}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------
+// 5. STAFF & IDENTITIES VIEW
+// --------------------------------------------------------------------------------
+function StaffIdentitiesView({ profiles, fetchData }) {
+  const [formType, setFormType] = useState('invite'); // 'invite' or 'manual'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState('teacher');
+  const [status, setStatus] = useState('');
+
+  const renderRoleBadge = (r) => {
+    let bg = COLORS.lightGray, color = COLORS.textMuted;
+    if (r === 'admin') { bg = '#fef3c7'; color = '#b45309'; }
+    if (r === 'teacher') { bg = '#d1fae5'; color = '#047857'; }
+    if (r === 'student') { bg = '#e0e7ff'; color = '#4338ca'; }
+    return <span style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", background: bg, color }}>{r}</span>;
+  };
+
+  const handleAction = async (e) => {
+    e.preventDefault();
+    setStatus("Processing...");
+    try {
+      const endpoint = formType === 'invite' ? '/api/admin/invite-user' : '/api/admin/create-user';
+      const body = formType === 'invite' ? { email, role: userRole } : { email, password, role: userRole };
+      const res = await fetch(endpoint, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setStatus(`Success! ${formType === 'invite' ? 'Invitation sent.' : 'User created.'}`);
+      setEmail(''); setPassword(''); fetchData();
+    } catch (err) {
+      setStatus(`Error: ${err.message}`);
+    }
+  };
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 28, fontWeight: 800, color: COLORS.black, marginBottom: 24 }}>Staff & Identities</h2>
+      
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
+        {/* Provisioning Form */}
+        <div style={{ background: COLORS.white, padding: 32, borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+          <div style={{ display: "flex", gap: 12, marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${COLORS.lightGray}` }}>
+            <button onClick={() => setFormType('invite')} style={{ flex: 1, padding: 12, background: formType === 'invite' ? COLORS.black : 'transparent', color: formType === 'invite' ? COLORS.white : COLORS.textMuted, border: `1px solid ${COLORS.black}`, borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>📨 Send Email Invite</button>
+            <button onClick={() => setFormType('manual')} style={{ flex: 1, padding: 12, background: formType === 'manual' ? COLORS.black : 'transparent', color: formType === 'manual' ? COLORS.white : COLORS.textMuted, border: `1px solid ${COLORS.black}`, borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>🔐 Set Manually</button>
+          </div>
+          
+          <form onSubmit={handleAction}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, marginBottom: 4, display: "block", textTransform: "uppercase" }}>Email Address</label>
+              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15 }} />
+            </div>
+            
+            {formType === 'manual' && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, marginBottom: 4, display: "block", textTransform: "uppercase" }}>Assign Password</label>
+                <input type="text" required value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15 }} />
+              </div>
+            )}
+            
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, marginBottom: 4, display: "block", textTransform: "uppercase" }}>System Role</label>
+              <select value={userRole} onChange={e => setUserRole(e.target.value)} style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, fontSize: 15, background: "transparent" }}>
+                <option value="admin">Admin</option>
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+              </select>
+            </div>
+            
+            <button type="submit" style={{ width: "100%", padding: 16, background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 8, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+              {formType === 'invite' ? 'Send Invitation &rarr;' : 'Provision Account &rarr;'}
+            </button>
+            {status && <div style={{ marginTop: 16, fontSize: 13, fontWeight: 600, color: status.includes('Error') ? COLORS.red : COLORS.text }}>{status}</div>}
+          </form>
+        </div>
+
+        {/* Directory List */}
+        <div style={{ background: COLORS.white, padding: 32, borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 20 }}>System Directory</h3>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {profiles && profiles.length > 0 ? profiles.map(p => (
+              <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${COLORS.lightGray}` }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{p.email}</div>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>Auth ID: {p.id.substring(0,8)}...</div>
+                </div>
+                {renderRoleBadge(p.role)}
+              </div>
+            )) : <p style={{ fontSize: 13, color: COLORS.textMuted }}>No profiles fetched. (Ensure RLS policies allow admin read access)</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
