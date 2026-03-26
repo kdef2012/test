@@ -35,6 +35,7 @@ export default function KCUTeacher() {
   const [customAmount, setCustomAmount] = useState("");
   const [customDesc, setCustomDesc] = useState("");
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("Banking");
 
   const showToast = (msg, type = "success") => {
     setToast(msg); setToastType(type);
@@ -109,7 +110,16 @@ export default function KCUTeacher() {
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
-        <div style={{ background: COLORS.white, borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+        
+        {/* TABS */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 24, padding: 6, background: COLORS.white, borderRadius: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <button onClick={() => setActiveTab("Banking")} style={{ flex: 1, padding: "12px", background: activeTab === "Banking" ? COLORS.black : "transparent", color: activeTab === "Banking" ? COLORS.white : COLORS.textMuted, borderRadius: 8, fontWeight: 800, border: "none", cursor: "pointer", transition: "all 0.2s" }}>KCU Banking</button>
+          <button onClick={() => setActiveTab("Roster")} style={{ flex: 1, padding: "12px", background: activeTab === "Roster" ? COLORS.black : "transparent", color: activeTab === "Roster" ? COLORS.white : COLORS.textMuted, borderRadius: 8, fontWeight: 800, border: "none", cursor: "pointer", transition: "all 0.2s" }}>Student Roster Lookup</button>
+        </div>
+
+        {activeTab === "Banking" && (
+          <>
+            <div style={{ background: COLORS.white, borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, display: "block" }}>Select Student</label>
           <select value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}
             style={{ width: "100%", padding: 14, borderRadius: 10, border: `2px solid ${COLORS.lightGray}`, fontSize: 16, fontWeight: 600 }}>
@@ -223,7 +233,66 @@ export default function KCUTeacher() {
               </div>
             );
           })}
-        </div>
+          </div>
+          </>
+        )}
+
+        {activeTab === "Roster" && (
+          <div>
+            <div style={{ background: COLORS.white, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+              <select value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}
+                style={{ width: "100%", padding: 14, borderRadius: 10, border: `2px solid ${COLORS.lightGray}`, fontSize: 16, fontWeight: 600 }}>
+                <option value="">Select a student to view details...</option>
+                {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.grade})</option>)}
+              </select>
+            </div>
+
+            {selectedStudent && (
+              <div>
+                {(() => {
+                  const s = students.find(x => x.id === selectedStudent);
+                  if (!s) return null;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                      <div style={{ background: COLORS.white, padding: 24, borderRadius: 12, borderLeft: `4px solid ${COLORS.gold}`, boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                        <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{s.name}</h2>
+                        <p style={{ color: COLORS.textMuted, fontWeight: 600 }}>Grade: {s.grade} &bull; ID: {s.id}</p>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                        <div style={{ background: COLORS.white, padding: 24, borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                          <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 12, marginBottom: 16, color: COLORS.black }}>Current Grades</h3>
+                          {Object.keys(s.grades_in_progress || {}).length > 0 ? (
+                            Object.entries(s.grades_in_progress).map(([subj, grd]) => (
+                              <div key={subj} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, padding: 12, background: COLORS.offWhite, borderRadius: 6 }}>
+                                <span style={{ fontWeight: 700 }}>{subj}</span>
+                                <span style={{ fontWeight: 800, color: COLORS.gold }}>{grd}</span>
+                              </div>
+                            ))
+                          ) : <div style={{ fontSize: 13, color: COLORS.textMuted }}>No grades currently logged by Admin.</div>}
+                        </div>
+
+                        <div style={{ background: COLORS.white, padding: 24, borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                          <h3 style={{ fontSize: 16, fontWeight: 800, borderBottom: `2px solid ${COLORS.lightGray}`, paddingBottom: 12, marginBottom: 16, color: COLORS.black }}>Emergency & Medical</h3>
+                          <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.textMuted, letterSpacing: 1, marginBottom: 4 }}>PARENTS / GUARDIANS</div>
+                            <div style={{ fontSize: 15, fontWeight: 600 }}>{s.parent_names || "N/A"}</div>
+                            <div style={{ fontSize: 14, marginTop: 4 }}>{s.parent_phone || "No phone listed"}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.red, letterSpacing: 1, marginBottom: 4 }}>KNOWN ALLERGIES</div>
+                            <div style={{ fontSize: 14, background: COLORS.offWhite, padding: 12, borderRadius: 6, color: COLORS.red, fontWeight: 600 }}>{s.allergies_medical || "None reported by Admin."}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
       <Toast message={toast} type={toastType} />
     </div>
