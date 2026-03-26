@@ -325,12 +325,15 @@ function Nav({ active, setActive }) {
         
         {/* Desktop Nav */}
         <div className="hidden lg:flex gap-2 lg:gap-4 items-center">
-          {["Our Story", "Academics", "Curriculum", "Athletics", "Mentoring", "Enrollment", "Scholarships", "Parents"].map(item => (
+          {["Our Story", "Academics", "Curriculum", "Mentoring", "Enrollment", "Scholarships", "Parents"].map(item => (
             <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '')}`} onClick={e => { e.preventDefault(); setActive(item); document.getElementById(item.toLowerCase().replace(/\s/g, ''))?.scrollIntoView({behavior:"smooth"}); }}
               style={{ color: active === item ? COLORS.gold : "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
               {item}
             </a>
           ))}
+          <a href="/athletics" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
+            Athletics
+          </a>
           <a href="/calendar" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, padding: "6px 8px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
             Calendar
           </a>
@@ -348,12 +351,15 @@ function Nav({ active, setActive }) {
       {/* Mobile Menu */}
       {open && (
         <div className="absolute top-24 left-0 w-full bg-black flex flex-col items-center py-6 gap-6 lg:hidden border-t border-gray-800 h-screen overflow-y-auto pb-32">
-          {["Our Story", "Academics", "Curriculum", "Athletics", "Mentoring", "Enrollment", "Scholarships", "Parents"].map(item => (
+          {["Our Story", "Academics", "Curriculum", "Mentoring", "Enrollment", "Scholarships", "Parents"].map(item => (
             <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '')}`} onClick={e => { e.preventDefault(); setActive(item); setOpen(false); document.getElementById(item.toLowerCase().replace(/\s/g, ''))?.scrollIntoView({behavior:"smooth"}); }}
               style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               {item}
             </a>
           ))}
+          <a href="/athletics" style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            Athletics
+          </a>
           <a href="/calendar" style={{ display: "block", color: "rgba(255,255,255,0.8)", padding: "10px 0", fontSize: 16, textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             Calendar
           </a>
