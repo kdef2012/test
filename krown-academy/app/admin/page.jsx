@@ -159,7 +159,51 @@ function ApplicationsView({ applications, fetchData }) {
   const [selectedApp, setSelectedApp] = useState(null);
 
   const updateStatus = async (id, status) => {
+    let reason = "";
+    if (status === 'Rejected') {
+      reason = window.prompt("What is the reason for rejection? (Included in email)");
+      if (reason === null) return; // Cancelled
+    }
+
     await supabase.from('applications').update({ status }).eq('id', id);
+    
+    const appData = applications.find(a => a.id === id);
+    if (appData) {
+      const studentName = appData.data["Student Full Name"] || appData.data["Full Name"] || "Unknown";
+      
+      // Auto-Provision Student on Acceptance
+      if (status === 'Accepted' && appData.form_type === 'Enrollment Application') {
+        const genId = 'KNDL' + Math.floor(100 + Math.random() * 900); // KNDL + 3 digits
+        const genPin = Math.floor(1000 + Math.random() * 9000).toString(); // 4 digits
+        const gradeLevel = appData.data["Grade Level Entering (6-12)"] || "9th";
+        
+        await supabase.from('students').insert({
+          id: genId,
+          name: studentName,
+          grade: gradeLevel,
+          pin: genPin,
+          credits_earned: 0,
+          credits_needed: 22,
+          taken: [],
+          needed: []
+        });
+        
+        alert(`Student Profile Auto-Created!\n\nID: ${genId}\nPIN: ${genPin}\nName: ${studentName}\n\nThey have been instantly added to your Student Roster and Degree Tracker.`);
+      }
+
+      fetch('/api/emails/applications/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          reason,
+          formType: appData.form_type,
+          parentEmail: appData.data["Email Address"],
+          studentName
+        })
+      }).catch(err => console.error("Email failed:", err));
+    }
+
     setSelectedApp(null);
     fetchData();
   };
