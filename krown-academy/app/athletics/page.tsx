@@ -35,9 +35,9 @@ export default function AthleticsPortal() {
     <div style={{ background: COLORS.black, minHeight: "100vh", color: COLORS.white, fontFamily: "'Outfit', sans-serif" }}>
       {/* HEADER HERO */}
       <section style={{ position: "relative", overflow: "hidden", borderBottom: `4px solid ${COLORS.red}` }}>
-         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "url('/knights-logo.png') no-repeat center bottom", backgroundSize: "cover", opacity: 0.1, zIndex: 0 }} />
+         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "url('/knights-logo.jpg') no-repeat center bottom", backgroundSize: "cover", opacity: 0.1, zIndex: 0 }} />
          <div style={{ position: "relative", zIndex: 10, maxWidth: 1200, margin: "0 auto", padding: "80px 20px 40px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-           <img src="/knights-logo.png" alt="Krown Knights Official Mascot" style={{ width: 220, height: "auto", marginBottom: 20, filter: "drop-shadow(0 10px 30px rgba(196,30,30,0.4))" }} />
+           <img src="/knights-logo.jpg" alt="Krown Knights Official Mascot" style={{ width: 220, height: "auto", marginBottom: 20, filter: "drop-shadow(0 10px 30px rgba(196,30,30,0.4))" }} />
            <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 56, fontWeight: 900, color: COLORS.white, letterSpacing: 4, textTransform: "uppercase", marginBottom: 8 }}>
              Krown <span style={{ color: COLORS.red }}>Knights</span>
            </h1>
