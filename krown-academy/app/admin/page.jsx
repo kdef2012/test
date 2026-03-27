@@ -94,7 +94,7 @@ export default function AdminPortal() {
         </div>
         
         <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {["Dashboard", "Applications", "Students", "Courses", "Athletics", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
+          {["Dashboard", "Applications", "Students", "Courses", "Athletics", "Roundtable", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -122,6 +122,7 @@ export default function AdminPortal() {
         {activeTab === "Students" && <StudentsView students={students} applications={applications} fetchData={fetchData} />}
         {activeTab === "Courses" && <CoursesView courses={courses} students={students} enrollments={enrollments} fetchData={fetchData} />}
         {activeTab === "Athletics" && <AthleticsView athletes={athletes} schedules={schedules} fetchData={fetchData} />}
+        {activeTab === "Roundtable" && <RoundtableView courses={courses} students={students} />}
         {activeTab === "Mentoring" && <MentoringView students={students} logs={logs} fetchData={fetchData} />}
         {activeTab === "Emergencies" && <EmergenciesView students={students} applications={applications} />}
         {activeTab === "Staff & Identities" && <StaffIdentitiesView profiles={profiles} fetchData={fetchData} />}
@@ -1157,6 +1158,149 @@ function AthleticsView({ athletes, schedules, fetchData }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------
+// 9. ROUNDTABLE RECAP (TICKET OWL ADMIN UI)
+// --------------------------------------------------------------------------------
+function RoundtableView({ courses, students }) {
+  const [activeRTTab, setActiveRTTab] = useState("Creator");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedTickets, setGeneratedTickets] = useState([]);
+  const [liveMonitorData, setLiveMonitorData] = useState([]);
+
+  const handleGenerate = async (e) => {
+    e.preventDefault();
+    setIsGenerating(true);
+    const data = {
+      grade_level: e.target.grade.value,
+      target_standard: e.target.standard.value,
+      question_type: e.target.type.value,
+      difficulty: e.target.difficulty.value,
+      count: parseInt(e.target.count.value)
+    };
+    
+    try {
+      const res = await fetch("/api/generate-ticket", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (result.error) alert("AI Engine Error: " + result.error);
+      else if (result.questions) setGeneratedTickets(result.questions);
+    } catch (err) {
+      alert("Failed to contact the Gemini AI Engine.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32, height: "100%" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h2 style={{ fontSize: 32, fontWeight: 900, color: COLORS.black, margin: 0 }}>Roundtable Recap</h2>
+          <div style={{ color: COLORS.gold, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, margin: "4px 0 0" }}>Powered by Ticket Owl & Gemini Ultra</div>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          {["Creator", "Live Monitor", "Analytics"].map(tab => (
+            <button key={tab} onClick={() => setActiveRTTab(tab)} style={{ padding: "10px 20px", borderRadius: 8, fontWeight: 800, cursor: "pointer", border: "none", background: activeRTTab === tab ? COLORS.black : COLORS.lightGray, color: activeRTTab === tab ? COLORS.white : COLORS.textMuted }}>{tab}</button>
+          ))}
+        </div>
+      </div>
+
+      {activeRTTab === "Creator" && (
+        <div style={{ display: "flex", gap: 32 }}>
+          {/* AI Generator Panel */}
+          <div style={{ flex: 1, background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 24 }}>
+              <div style={{ width: 40, height: 40, background: "rgba(200,168,78,0.1)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>✨</div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>AI Question Generator</h3>
+            </div>
+            <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", gap: 16 }}>
+                 <div style={{ flex: 1 }}>
+                   <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>Grade Level</label>
+                   <select name="grade" style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, background: COLORS.offWhite }} defaultValue="8th">
+                     <option value="6th">6th Grade</option>
+                     <option value="7th">7th Grade</option>
+                     <option value="8th">8th Grade</option>
+                     <option value="9th">9th Grade</option>
+                     <option value="10th">10th Grade</option>
+                   </select>
+                 </div>
+                 <div style={{ flex: 2 }}>
+                   <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>Target Standard Code (e.g. 8.EE.1)</label>
+                   <input required name="standard" type="text" placeholder="Enter standard code..." style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+                 </div>
+              </div>
+              <div style={{ display: "flex", gap: 16 }}>
+                 <div style={{ flex: 1 }}>
+                   <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>Question Type</label>
+                   <select name="type" style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, background: COLORS.offWhite }}>
+                     <option value="Multiple Choice">Multiple Choice</option>
+                     <option value="Free Response">Free Response</option>
+                   </select>
+                 </div>
+                 <div style={{ flex: 1 }}>
+                   <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>Difficulty</label>
+                   <select name="difficulty" style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, background: COLORS.offWhite }}>
+                     <option value="easy">Easy (Approaching)</option>
+                     <option value="medium">Medium (On Grade)</option>
+                     <option value="hard">Hard (Mastery)</option>
+                     <option value="adaptive">Adaptive</option>
+                   </select>
+                 </div>
+              </div>
+              <div>
+                 <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 6 }}>Question Count</label>
+                 <input type="number" name="count" defaultValue={3} min={1} max={10} style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${COLORS.lightGray}` }} />
+              </div>
+              <button disabled={isGenerating} style={{ marginTop: 12, padding: "16px", background: COLORS.gold, color: COLORS.black, border: "none", borderRadius: 8, fontWeight: 800, fontSize: 15, cursor: isGenerating ? "wait" : "pointer" }}>
+                {isGenerating ? "Gemini Ultra is Thinking..." : "Generate Ticket with AI"}
+              </button>
+            </form>
+          </div>
+
+          {/* Generated Preview */}
+          <div style={{ flex: 1, background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)", overflowY: "auto", maxHeight: "70vh" }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, marginBottom: 24 }}>Generated Ticket Preview</h3>
+            {generatedTickets.length === 0 ? (
+               <div style={{ textAlign: "center", color: COLORS.textMuted, padding: 40, fontStyle: "italic" }}>Awaiting AI Generation.</div>
+            ) : (
+               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                 {generatedTickets.map((q, i) => (
+                   <div key={i} style={{ padding: 20, border: `2px solid ${COLORS.lightGray}`, borderRadius: 12 }}>
+                     <div style={{ fontWeight: 800, color: COLORS.red, marginBottom: 8 }}>Question {i + 1} ({q.difficulty.toUpperCase()})</div>
+                     <p style={{ fontWeight: 600, fontSize: 16, marginBottom: 16 }}>{q.question_text}</p>
+                     {q.options && q.options.map((opt, j) => (
+                       <div key={j} style={{ padding: "8px 12px", background: q.correct_answer === opt ? "rgba(29,158,117,0.1)" : COLORS.offWhite, border: q.correct_answer === opt ? "1px solid #1D9E75" : "none", borderRadius: 6, marginBottom: 6, fontWeight: q.correct_answer === opt ? 700 : 500 }}>
+                         {opt} {q.correct_answer === opt && "✅"}
+                       </div>
+                     ))}
+                   </div>
+                 ))}
+                 <button style={{ width: "100%", padding: "16px", background: COLORS.black, color: COLORS.white, border: "none", borderRadius: 8, fontWeight: 800, cursor: "pointer", marginTop: 12 }}>
+                   Approve & Publish to Krown Courses
+                 </button>
+               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeRTTab === "Live Monitor" && (
+        <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+           <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, marginBottom: 8 }}>Live Classroom Monitor</h3>
+           <p style={{ color: COLORS.textMuted, marginBottom: 24 }}>Monitor student ticket progression in real-time natively from the Supabase stream.</p>
+           
+           <div style={{ textAlign: "center", padding: 60, background: COLORS.offWhite, borderRadius: 12 }}>
+             <div style={{ fontSize: 40, marginBottom: 16 }}>📡</div>
+             <p style={{ fontWeight: 800, color: COLORS.textMuted }}>No Active Tickets Running</p>
+           </div>
+        </div>
+      )}
     </div>
   );
 }
