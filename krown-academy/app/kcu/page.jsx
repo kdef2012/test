@@ -296,6 +296,7 @@ export default function KCUPortal() {
             </div>
 
             {/* Roundtable Content Areas */}
+            {/* Roundtable Content Areas */}
             <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
               
               {roundtableTab === "eog" && (
@@ -316,19 +317,46 @@ export default function KCUPortal() {
 
               {roundtableTab === "tickets" && (
                 <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: COLORS.black }}>Daily Exit Tickets</h3>
-                  <p style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Complete your exit ticket before leaving class to secure your daily attendance and KCU stipend.</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: COLORS.black, margin: 0 }}>Active Exit Ticket</h3>
+                      <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 4 }}>Standard 8.EE.1 • Question 1 of 3</p>
+                    </div>
+                    <div style={{ background: "rgba(196,30,30,0.1)", color: COLORS.red, padding: "8px 16px", borderRadius: 20, fontWeight: 800, fontSize: 13 }}>In Progress (Secure Mode)</div>
+                  </div>
                   
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: 14, fontWeight: 800, marginBottom: 8 }}>What was the most important concept you learned today?</label>
-                      <textarea value={exitTicket} onChange={e => setExitTicket(e.target.value)} placeholder="Type your answer..." style={{ width: "100%", padding: 16, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, minHeight: 80, fontSize: 15, fontFamily: "'Outfit', sans-serif" }}></textarea>
+                  <div style={{ background: COLORS.offWhite, padding: 32, borderRadius: 12, border: `2px solid ${COLORS.lightGray}`, marginBottom: 24 }}>
+                    <p style={{ fontSize: 18, fontWeight: 600, color: COLORS.black, lineHeight: 1.6, marginBottom: 32 }}>
+                      Simplify the following expression: <br/><strong>(3x²y³) * (4x⁴y)</strong>
+                    </p>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+                      {["A) 12x⁶y⁴", "B) 7x⁶y⁴", "C) 12x⁸y³", "D) 7x⁸y³"].map(opt => (
+                        <label key={opt} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px", background: COLORS.white, border: `2px solid ${COLORS.lightGray}`, borderRadius: 8, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.gold} onMouseLeave={e => e.currentTarget.style.borderColor = COLORS.lightGray}>
+                          <input type="radio" name="q1" value={opt} style={{ height: 20, width: 20 }} />
+                          <span style={{ fontSize: 16, fontWeight: 600 }}>{opt}</span>
+                        </label>
+                      ))}
                     </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: 14, fontWeight: 800, marginBottom: 8 }}>What are you still confused about?</label>
-                      <textarea placeholder="Type your answer..." style={{ width: "100%", padding: 16, borderRadius: 8, border: `2px solid ${COLORS.lightGray}`, minHeight: 80, fontSize: 15, fontFamily: "'Outfit', sans-serif" }}></textarea>
+
+                    {/* Digital Scratchpad & Confidence */}
+                    <div style={{ borderTop: `2px solid ${COLORS.lightGray}`, paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted, marginBottom: 8 }}>CONFIDENCE LEVEL:</div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {["Low", "Medium", "High"].map(lvl => (
+                            <button key={lvl} type="button" style={{ padding: "8px 16px", borderRadius: 20, border: `1px solid ${COLORS.lightGray}`, background: COLORS.white, color: COLORS.textMuted, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{lvl}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <button type="button" style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", color: COLORS.gold, border: `2px solid ${COLORS.gold}`, padding: "10px 20px", borderRadius: 8, fontWeight: 800, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = COLORS.gold; e.currentTarget.style.color = COLORS.black; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = COLORS.gold; }}>
+                        <span style={{ fontSize: 18 }}>✍️</span> Open Digital Scratchpad
+                      </button>
                     </div>
-                    <button onClick={() => { alert('Exit Ticket securely submitted to your Teacher.'); setExitTicket(''); }} style={{ background: COLORS.red, color: COLORS.white, padding: "14px 24px", borderRadius: 8, border: "none", fontWeight: 800, cursor: "pointer", alignSelf: "flex-start" }}>Submit Exit Ticket</button>
+                  </div>
+
+                  <div style={{ textAlign: "right" }}>
+                    <button style={{ background: COLORS.black, color: COLORS.white, padding: "16px 32px", borderRadius: 8, border: "none", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>Submit Question &rarr;</button>
                   </div>
                 </div>
               )}
