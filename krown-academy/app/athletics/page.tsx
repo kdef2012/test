@@ -16,13 +16,18 @@ export default function AthleticsPortal() {
 
   useEffect(() => {
     async function loadSports() {
-      const [rRes, sRes] = await Promise.all([
-        supabase.from('krown_athletics_roster').select('*').order('created_at', { ascending: false }).catch(()=>({data:[]})),
-        supabase.from('krown_athletics_schedule').select('*').order('match_date', { ascending: true }).catch(()=>({data:[]}))
-      ]);
-      if(rRes && rRes.data) setAthletes(rRes.data);
-      if(sRes && sRes.data) setSchedules(sRes.data);
-      setLoading(false);
+      try {
+        const [rRes, sRes] = await Promise.all([
+          supabase.from('krown_athletics_roster').select('*').order('created_at', { ascending: false }),
+          supabase.from('krown_athletics_schedule').select('*').order('match_date', { ascending: true })
+        ]);
+        if (rRes?.data) setAthletes(rRes.data);
+        if (sRes?.data) setSchedules(sRes.data);
+      } catch (err) {
+        console.error("Failed to load sports data:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     loadSports();
   }, []);
