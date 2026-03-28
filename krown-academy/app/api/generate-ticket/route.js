@@ -47,7 +47,7 @@ export async function POST(req) {
     
     if (data.error) {
        console.error("Gemini API Error:", data.error);
-       return NextResponse.json({ error: "Failed to generate AI questions. Gemini refused the prompt or hit a quota limit." }, { status: 500 });
+       return NextResponse.json({ error: `Gemini Error: ${data.error.message || "Quota limit hit"}` }, { status: 500 });
     }
 
     let generatedText = data.candidates[0]?.content?.parts[0]?.text || "[]";
