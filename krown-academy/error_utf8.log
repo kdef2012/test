@@ -1,0 +1,7 @@
+🚀 Starting Curriculum Ingestion Engine for: 8th Grade Math
+🧠 Processing 8th Grade Math Standards...
+✅ Gemini successfully generated 3 strict multi-day modules!
+Writing Module: Module 1: The Number System (8.NS.1 & 8.NS.2)...
+❌ Fatal Error communicating with AI Database Engine: TypeError: Cannot read properties of null (reading 'id')
+    at runIngestion (file:///C:/Users/kdnelson/Downloads/Krown_Academy_Complete_Package/krown-academy-nextjs/krown-academy/scripts/ingest_curriculum.mjs:88:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
