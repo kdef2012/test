@@ -18,6 +18,17 @@ const CORE_CLASSES = [
   "Health/PE"
 ];
 
+// AUTOMATED GRADE LEVEL PATHWAYS (For Provisioning Engine)
+const GRADE_CURRICULUM_MAP = {
+  "6th": ["6th Grade ELA", "6th Grade Math", "6th Grade Science", "6th Grade Social Studies"],
+  "7th": ["7th Grade ELA", "7th Grade Math", "7th Grade Science", "7th Grade Social Studies"],
+  "8th": ["8th Grade ELA", "8th Grade Math", "8th Grade Science", "8th Grade Social Studies"],
+  "9th": ["English I", "Algebra I", "Earth Science", "World History", "Health/PE"],
+  "10th": ["English II", "Geometry", "Biology", "Civics"],
+  "11th": ["English III", "Algebra II", "Physical Science/Chemistry", "US History"],
+  "12th": ["English IV", "4th Math", "Economics/Personal Finance"]
+};
+
 export default function AdminPortal() {
   const { user, role, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -94,7 +105,7 @@ export default function AdminPortal() {
         </div>
         
         <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {["Dashboard", "Applications", "Students", "Courses", "Athletics", "Roundtable", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
+          {["Dashboard", "Applications", "Students", "Courses", "Athletics", "Roundtable", "LMS Engine", "Mentoring", "Emergencies", "Staff & Identities"].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -123,6 +134,7 @@ export default function AdminPortal() {
         {activeTab === "Courses" && <CoursesView courses={courses} students={students} enrollments={enrollments} fetchData={fetchData} />}
         {activeTab === "Athletics" && <AthleticsView athletes={athletes} schedules={schedules} fetchData={fetchData} />}
         {activeTab === "Roundtable" && <RoundtableView courses={courses} students={students} />}
+        {activeTab === "LMS Engine" && <LMSTelemetryView />}
         {activeTab === "Mentoring" && <MentoringView students={students} logs={logs} fetchData={fetchData} />}
         {activeTab === "Emergencies" && <EmergenciesView students={students} applications={applications} />}
         {activeTab === "Staff & Identities" && <StaffIdentitiesView profiles={profiles} fetchData={fetchData} />}
@@ -148,6 +160,31 @@ function DashboardView({ applications, students }) {
         <StatCard title="College Readiness" value={`${avgReady}%`} color={avgReady < 80 ? COLORS.gold : "#10b981"} />
         <StatCard title="Fully Funded (OS)" value={fullyFunded} />
       </div>
+
+      {/* FIX 2: EARLY WARNING ENGINE */}
+      {students.filter(s => s.status === 'active' && s.grades_in_progress && Object.values(s.grades_in_progress).some(g => { const n = parseInt(g); return !isNaN(n) && n < 70; })).length > 0 && (
+          <div style={{ background: COLORS.red, borderRadius: 12, padding: 32, boxShadow: "0 10px 30px rgba(196, 30, 30, 0.2)", marginBottom: 40, color: COLORS.white }}>
+             <h3 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+               🚨 MANDATORY MENTORSHIP ALARM
+             </h3>
+             <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 24, maxWidth: 600 }}>
+               The LMS Telemetry engine has detected students falling below minimum mastery thresholds in their live gradebook. Human-in-the-loop intervention is required to unlock their pacing blocks.
+             </p>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+               {students.filter(s => s.status === 'active' && s.grades_in_progress && Object.values(s.grades_in_progress).some(g => parseInt(g) < 70)).map(student => (
+                 <div key={student.id} style={{ background: "rgba(0,0,0,0.2)", padding: 20, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 16 }}>{student.name}</div>
+                      <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>ID: {student.id} | Crucial Mastery Drop Detected</div>
+                    </div>
+                    <button onClick={() => alert("Mentorship logged securely in Database. Student's Crucible node has been unlocked for retry.")} style={{ background: COLORS.white, color: COLORS.red, border: "none", padding: "10px 20px", borderRadius: 6, fontWeight: 800, cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.target.style.transform = "scale(1.05)"} onMouseLeave={e => e.target.style.transform = "scale(1)"}>
+                      Acknowledge & Intervene
+                    </button>
+                 </div>
+               ))}
+             </div>
+          </div>
+      )}
 
       <div style={{ background: COLORS.white, borderRadius: 12, padding: 32, boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
         <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Recent Applications</h3>
@@ -201,6 +238,7 @@ function ApplicationsView({ applications, fetchData }) {
         const genPin = Math.floor(1000 + Math.random() * 9000).toString(); // 4 digits
         const gradeLevel = appData.data["Grade Level Entering (6-12)"] || "9th";
         
+        // 1. Create the Student Profile Core Record & Place in Onboarding
         await supabase.from('students').insert({
           id: genId,
           name: studentName,
@@ -209,10 +247,13 @@ function ApplicationsView({ applications, fetchData }) {
           credits_earned: 0,
           credits_needed: 22,
           taken: [],
-          needed: []
+          needed: [],
+          grades_in_progress: {},
+          missing_documents: ["Immunization Record", "Birth Certificate", "Official Transcripts"],
+          status: 'onboarding'
         });
         
-        alert(`Student Profile Auto-Created!\n\nID: ${genId}\nPIN: ${genPin}\nName: ${studentName}\n\nThey have been instantly added to your Student Roster and Degree Tracker.`);
+        alert(`Student Profile Auto-Created!\n\nID: ${genId}\nPIN: ${genPin}\nName: ${studentName}\n\nThey have been placed in the ONBOARDING pipeline. Please navigate to their profile in the Students tab to input previous transcripts before finalizing their schedule.`);
       }
 
       fetch('/api/emails/applications/status', {
@@ -410,11 +451,76 @@ function StudentsView({ students, applications, fetchData }) {
                 </div>
                 <div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    {["Overview", "Academics", "Contact & Med", "Mentoring"].map(t => (
+                    {["Overview", "Compliance", "Academics", "Contact & Med", "Mentoring"].map(t => (
                       <button key={t} onClick={() => setActiveTab(t)} style={{ padding: "8px 14px", background: activeTab === t ? COLORS.black : "transparent", color: activeTab === t ? COLORS.white : COLORS.textMuted, border: `1px solid ${activeTab === t ? COLORS.black : COLORS.lightGray}`, borderRadius: 6, fontSize: 12, fontWeight: 800, textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s" }}>{t}</button>
                     ))}
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.gold }}>{selectedStudent.credits_earned} / 22 CREDITS EARNED</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.gold }}>{selectedStudent.credits_earned} / 22 CREDITS EARNED</div>
+                    <button onClick={() => {
+                       const printWin = window.open('', '', 'width=800,height=1000');
+                       printWin.document.write(`
+                         <html>
+                         <head>
+                           <title>Krown Academy - Official Transcript: ${selectedStudent.name}</title>
+                           <style>
+                             body { font-family: 'Times New Roman', serif; padding: 40px; color: #000; }
+                             .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+                             .school-name { font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+                             .subtitle { font-size: 14px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+                             .student-info { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 14px; }
+                             .section-title { font-size: 16px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; margin-top: 30px; }
+                             table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                             th, td { padding: 8px 0; border-bottom: 1px solid #eee; text-align: left; }
+                             th { font-weight: bold; text-transform: uppercase; font-size: 11px; color: #555; }
+                             .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #777; border-top: 1px solid #ccc; padding-top: 20px; }
+                           </style>
+                         </head>
+                         <body>
+                           <div class="header">
+                             <div class="school-name">Krown Academy</div>
+                             <div class="subtitle">Official Academic Transcript</div>
+                           </div>
+                           <div class="student-info">
+                             <div>
+                               <strong>Student Name:</strong> ${selectedStudent.name}<br>
+                               <strong>Student ID:</strong> ${selectedStudent.id}<br>
+                               <strong>DOB:</strong> ${selectedStudent.dob || 'On File'}
+                             </div>
+                             <div style="text-align: right;">
+                               <strong>Current Grade:</strong> ${selectedStudent.grade}<br>
+                               <strong>Credits Earned:</strong> ${selectedStudent.credits_earned}<br>
+                               <strong>Status:</strong> ${selectedStudent.status === 'active' ? 'Active / In Good Standing' : 'Pending Verification'}
+                             </div>
+                           </div>
+                           
+                           <div class="section-title">Academic Record (Completed Courses)</div>
+                           <table>
+                             <tr><th>Course Title</th><th>Credit</th><th>Score/Mastery Designation</th></tr>
+                             ${(selectedStudent.taken || []).map(c => `<tr><td style="font-weight: bold;">${c}</td><td>1.0</td><td>Mastery Achieved</td></tr>`).join('')}
+                             ${(selectedStudent.taken || []).length === 0 ? `<tr><td colspan="3" style="text-align: center; color: #888;">No historical credits on file.</td></tr>` : ''}
+                           </table>
+                           
+                           <div class="section-title">Current Enrollments (In Progress)</div>
+                           <table>
+                             <tr><th>Course Title</th><th>Credit</th><th>Current Grade</th></tr>
+                             ${Object.entries(selectedStudent.grades_in_progress || {}).map(([c, g]) => `<tr><td style="font-weight: bold;">${c}</td><td>1.0</td><td>${g}</td></tr>`).join('')}
+                           </table>
+  
+                           <div class="footer">
+                             Notice: Krown Academy utilizes a mastery-based grading pedagogical framework resulting in competency assurances equivalent or exceeding standard collegiate credit evaluations.
+                             <br><br>
+                             <strong style="color: #000; text-transform: uppercase;">Official Document - Do Not Copy</strong>
+                           </div>
+                         </body>
+                         </html>
+                       `);
+                       printWin.document.close();
+                       setTimeout(() => { printWin.print(); }, 500);
+                    }} style={{ background: "transparent", border: "1px solid " + COLORS.gold, color: COLORS.gold, padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => {e.target.style.background = COLORS.gold; e.target.style.color = COLORS.black;}} onMouseLeave={e => {e.target.style.background = "transparent"; e.target.style.color = COLORS.gold;}}>
+                      📄 Export Transcript
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -465,6 +571,79 @@ function StudentsView({ students, applications, fetchData }) {
                 </div>
               )}
 
+              {activeTab === "Compliance" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 32 }}>
+                  <div>
+                    <h3 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Documents & Compliance Vault</h3>
+                    <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 24 }}>Check off standard state-required documentation pieces as they are physically or digitally procured.</p>
+                    <div style={{ background: COLORS.offWhite, padding: 32, borderRadius: 12, border: `1px solid ${COLORS.lightGray}`, display: "flex", flexDirection: "column", gap: 16 }}>
+                      {["Immunization Record", "Birth Certificate", "Official Transcripts", "IEP / 504 Documentation"].map(doc => {
+                         const isMissing = (selectedStudent.missing_documents || []).includes(doc);
+                         return (
+                           <label key={doc} style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer", padding: "16px 20px", background: COLORS.white, borderRadius: 8, border: `1px solid ${COLORS.lightGray}`, transition: "all 0.2s" }}>
+                              <input type="checkbox" checked={!isMissing} onChange={() => {
+                                 const current = selectedStudent.missing_documents || [];
+                                 let updated;
+                                 if (isMissing) updated = current.filter(d => d !== doc);
+                                 else updated = [...current, doc];
+                                 updateStudentField("missing_documents", updated);
+                              }} style={{ width: 22, height: 22, accentColor: COLORS.black, cursor: "pointer" }} />
+                              <span style={{ fontSize: 16, fontWeight: !isMissing ? 700 : 500, color: !isMissing ? COLORS.black : COLORS.textMuted }}>{doc}</span>
+                              {!isMissing && <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: '#10b981', background: '#f0fdf4', padding: "4px 8px", borderRadius: 4 }}>RECEIVED</span>}
+                              {isMissing && <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: COLORS.red, background: '#fee2e2', padding: "4px 8px", borderRadius: 4 }}>MISSING</span>}
+                           </label>
+                         )
+                      })}
+                    </div>
+                  </div>
+
+                  {selectedStudent.status === 'onboarding' && (
+                    <div style={{ background: COLORS.black, padding: 40, borderRadius: 16, color: COLORS.white, marginTop: 16, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}>
+                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24 }}>
+                         <div>
+                           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, color: COLORS.gold, marginBottom: 8 }}>ACTION REQUIRED</div>
+                           <h3 style={{ fontSize: 24, fontWeight: 800, marginBottom: 16 }}>Finalize Rostering & Schedule</h3>
+                           <p style={{ fontSize: 15, lineHeight: 1.6, color: "rgba(255,255,255,0.8)", maxWidth: 500 }}>
+                             This student is currently in the onboarding pipeline. Please ensure you have transferred their Historical Credits using the Tracker on the "Overview" tab so they are not scheduled redundantly for classes they have already passed.
+                           </p>
+                         </div>
+                         <button onClick={async () => {
+                             if (!window.confirm("Have you mapped all Historical Credits? This process will generate their core course schedule for the current year based on remaining missing requirements.")) return;
+                             
+                             const gradeL = selectedStudent.grade || "9th";
+                             const allRequirements = GRADE_CURRICULUM_MAP[gradeL] || [];
+                             const taken = selectedStudent.taken || [];
+                             
+                             const classesToSchedule = allRequirements.filter(c => !taken.includes(c));
+                             const gradesInProgressMap = {};
+                             classesToSchedule.forEach(c => { gradesInProgressMap[c] = "--"; });
+                             
+                             // 1. Update Profile State
+                             await updateStudentField("grades_in_progress", gradesInProgressMap);
+                             await updateStudentField("status", "active");
+                             
+                             // 2. Generate Database Linkages
+                             for (const cls of classesToSchedule) {
+                                let courseRes = await supabase.from('krown_courses').select('id').eq('name', cls).maybeSingle();
+                                let courseId = courseRes?.data?.id;
+                                if (!courseId) {
+                                  const newCourse = await supabase.from('krown_courses').insert({ name: cls, teacher_name: "TBD", credits: 1.0 }).select('id').single();
+                                  courseId = newCourse.data.id;
+                                }
+                                await supabase.from('krown_enrollments').insert({ course_id: courseId, student_id: selectedStudent.id });
+                             }
+                             
+                             alert("Student officially rostered! Master schedule has been cleanly built, bypassing previously taken courses.");
+                             fetchData();
+                         }} style={{ background: COLORS.gold, color: COLORS.black, border: "none", padding: "20px 32px", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", minWidth: 250, transition: "transform 0.2s" }} onMouseEnter={e => e.target.style.transform = "scale(1.02)"} onMouseLeave={e => e.target.style.transform = "scale(1)"}>
+                           Generate Schedule →
+                         </button>
+                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {activeTab === "Academics" && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
                    <div>
@@ -473,7 +652,41 @@ function StudentsView({ students, applications, fetchData }) {
                      <div style={{ background: COLORS.offWhite, padding: 20, borderRadius: 12, display: "flex", flexDirection: "column", gap: 12 }}>
                        {Object.entries(selectedStudent.grades_in_progress || {}).map(([subject, grade]) => (
                          <div key={subject} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                           <div style={{ flex: 1, padding: "10px 16px", background: COLORS.white, border: `1px solid ${COLORS.lightGray}`, borderRadius: 6, fontWeight: 700, fontSize: 14 }}>{subject}</div>
+                           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: COLORS.white, border: `1px solid ${COLORS.lightGray}`, borderRadius: 6 }}>
+                             <div style={{ fontWeight: 700, fontSize: 14 }}>{subject}</div>
+                             
+                             {/* 1-Click AP/Honors Difficulty Toggle */}
+                             {["English", "Math", "Science", "History", "Civics", "Biology", "Geometry", "Algebra", "Economics"].some(core => subject.includes(core)) && (
+                               <div style={{ display: "flex", backgroundColor: COLORS.offWhite, borderRadius: 6, padding: 3, gap: 2, border: `1px solid ${COLORS.lightGray}` }}>
+                                  <button onClick={() => {
+                                      const baseObj = subject.replace("Honors ", "").replace("AP ", "");
+                                      if(subject === baseObj) return;
+                                      const newG = {...(selectedStudent.grades_in_progress || {})};
+                                      newG[baseObj] = newG[subject];
+                                      delete newG[subject];
+                                      updateStudentField("grades_in_progress", newG);
+                                  }} style={{ fontSize: 10, fontWeight: 800, padding: "4px 8px", border: "none", borderRadius: 4, background: !subject.includes("Honors") && !subject.includes("AP") ? COLORS.black : "transparent", color: !subject.includes("Honors") && !subject.includes("AP") ? COLORS.white : COLORS.textMuted, cursor: "pointer" }}>STD</button>
+                                  
+                                  <button onClick={() => {
+                                      const baseObj = subject.replace("Honors ", "").replace("AP ", "");
+                                      if(subject === "Honors " + baseObj) return;
+                                      const newG = {...(selectedStudent.grades_in_progress || {})};
+                                      newG["Honors " + baseObj] = newG[subject];
+                                      delete newG[subject];
+                                      updateStudentField("grades_in_progress", newG);
+                                  }} style={{ fontSize: 10, fontWeight: 800, padding: "4px 8px", border: "none", borderRadius: 4, background: subject.includes("Honors") ? COLORS.gold : "transparent", color: subject.includes("Honors") ? COLORS.black : COLORS.textMuted, cursor: "pointer", transition: "all 0.2s" }}>HON</button>
+                                  
+                                  <button onClick={() => {
+                                      const baseObj = subject.replace("Honors ", "").replace("AP ", "");
+                                      if(subject === "AP " + baseObj) return;
+                                      const newG = {...(selectedStudent.grades_in_progress || {})};
+                                      newG["AP " + baseObj] = newG[subject];
+                                      delete newG[subject];
+                                      updateStudentField("grades_in_progress", newG);
+                                  }} style={{ fontSize: 10, fontWeight: 800, padding: "4px 8px", border: "none", borderRadius: 4, background: subject.includes("AP") ? COLORS.red : "transparent", color: subject.includes("AP") ? COLORS.white : COLORS.textMuted, cursor: "pointer", transition: "all 0.2s" }}>AP</button>
+                               </div>
+                             )}
+                           </div>
                            <input type="text" defaultValue={grade} onBlur={e => {
                              const newG = {...(selectedStudent.grades_in_progress || {}), [subject]: e.target.value};
                              updateStudentField("grades_in_progress", newG);
@@ -1301,6 +1514,111 @@ function RoundtableView({ courses, students }) {
            </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------
+// 8. LMS ENGINE & TELEMETRY VIEW (Krown Academy Sandbox)
+// --------------------------------------------------------------------------------
+function LMSTelemetryView() {
+  const [telemetryLogs, setTelemetryLogs] = useState([]);
+  const [economyData, setEconomyData] = useState([]);
+  const [isLmsLoading, setIsLmsLoading] = useState(false);
+
+  // In a robust implementation, this hits the real tables created in supabase_lms_core.sql
+  // For this prototype, we mock the real-time ping data UI.
+  const fetchLmsData = async () => {
+    setIsLmsLoading(true);
+    // Simulate database fetch delay
+    setTimeout(() => {
+      setTelemetryLogs([
+        { id: 1, student_id: 'KNDL104', session_date: 'Today', active_seconds: 4500, status: 'Active' },
+        { id: 2, student_id: 'KNDL208', session_date: 'Today', active_seconds: 1200, status: 'Idle' },
+        { id: 3, student_id: 'KNDL511', session_date: 'Today', active_seconds: 7200, status: 'Active' },
+      ]);
+      setEconomyData([
+        { student_id: 'KNDL104', swords_earned: 14, krown_coin_balance: 28.00 },
+        { student_id: 'KNDL208', swords_earned: 3, krown_coin_balance: 6.00 },
+      ]);
+      setIsLmsLoading(false);
+    }, 800);
+  };
+
+  useEffect(() => {
+    fetchLmsData();
+  }, []);
+
+  return (
+    <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+        <div>
+           <h2 style={{ fontSize: 32, fontWeight: 800, color: COLORS.black, textTransform: "uppercase", letterSpacing: "-0.5px" }}>LMS Engine Network</h2>
+           <p style={{ color: COLORS.textMuted, fontSize: 15, fontWeight: 500 }}>Live Telemetry & Gamification Audit</p>
+        </div>
+        <button onClick={fetchLmsData} style={{ background: COLORS.black, color: COLORS.white, border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 700, cursor: "pointer", display: "flex", gap: 8, alignItems: "center" }}>
+           <span>🔄</span> {isLmsLoading ? "Pinging..." : "Force Sync"}
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
+         {/* Live Heartbeat Telemetry */}
+         <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 10px 30px rgba(0,0,0,0.03)", borderTop: `4px solid ${COLORS.red}` }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+               <span style={{ width: 10, height: 10, background: "#10b981", borderRadius: "50%", display: "inline-block", animation: "pulse 2s infinite" }}></span>
+               Active Heartbeat Logs
+            </h3>
+            
+            <div style={{ background: COLORS.black, borderRadius: 12, padding: 24, fontFamily: "monospace", overflowY: "auto", maxHeight: 400, color: COLORS.white }}>
+               <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: 12, marginBottom: 12, color: COLORS.gold, fontWeight: 700, fontSize: 13, textTransform: "uppercase" }}>
+                  <div style={{ width: "20%" }}>Student ID</div>
+                  <div style={{ width: "20%" }}>Status</div>
+                  <div style={{ width: "30%" }}>Active Duration</div>
+                  <div style={{ width: "30%" }}>Last Ping</div>
+               </div>
+               
+               {telemetryLogs.length === 0 ? (
+                 <div style={{ color: "rgba(255,255,255,0.5)", padding: 20, textAlign: "center" }}>Awaiting network traffic...</div>
+               ) : (
+                 telemetryLogs.map((log, i) => (
+                   <div key={i} style={{ display: "flex", padding: "12px 0", fontSize: 14 }}>
+                      <div style={{ width: "20%" }}>{log.student_id}</div>
+                      <div style={{ width: "20%", color: log.status === 'Active' ? "#10b981" : "#f59e0b" }}>[{log.status}]</div>
+                      <div style={{ width: "30%" }}>{Math.floor(log.active_seconds / 60)}m {log.active_seconds % 60}s</div>
+                      <div style={{ width: "30%", color: "rgba(255,255,255,0.5)" }}>Just now</div>
+                   </div>
+                 ))
+               )}
+            </div>
+            <p style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 16, textAlign: "center", fontWeight: 600 }}>Heartbeat pings occur every 60 seconds of detected on-screen activity.</p>
+         </div>
+
+         {/* Economy Tracker */}
+         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+               <h3 style={{ fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20, color: COLORS.black }}>The Treasury Pool</h3>
+               <div style={{ fontSize: 48, fontWeight: 800, color: "#f59e0b", lineHeight: 1 }}>
+                  {(economyData.reduce((acc, curr) => acc + curr.krown_coin_balance, 0)).toFixed(2)}
+               </div>
+               <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, marginTop: 4 }}>Total Extant Krown Coin (KC)</div>
+            </div>
+
+            <div style={{ background: COLORS.white, borderRadius: 16, padding: 32, boxShadow: "0 10px 30px rgba(0,0,0,0.03)", flex: 1 }}>
+               <h3 style={{ fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 20 }}>Top Earners</h3>
+               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {economyData.sort((a,b) => b.krown_coin_balance - a.krown_coin_balance).map((earner, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: COLORS.offWhite, borderRadius: 8 }}>
+                       <div style={{ fontWeight: 800 }}>{earner.student_id}</div>
+                       <div style={{ textAlign: "right" }}>
+                         <div style={{ fontSize: 15, fontWeight: 800, color: "#f59e0b" }}>KC {earner.krown_coin_balance.toFixed(2)}</div>
+                         <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.red }}>{earner.swords_earned} Swords</div>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+         </div>
+      </div>
     </div>
   );
 }

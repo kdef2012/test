@@ -203,6 +203,21 @@ export default function KCUAdmin() {
     }
     await supabase.from('kcu_accounts').update(updateData).eq('id', account.id);
 
+    // Send automated email receipt
+    fetch('/api/emails/kcu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId,
+        studentName: getName(studentId),
+        accountId: account.id,
+        amount,
+        newBalance,
+        category,
+        description
+      })
+    }).catch(err => console.error(err));
+
     showToast(`${category === 'deposit' ? '+' : '-'}${formatMoney(amount)} → New balance: ${formatMoney(newBalance)}`);
     fetchAll();
   };

@@ -136,6 +136,7 @@ export default function Handbook() {
               Redirect → Intervention → Director Conference → Suspension → Expulsion
             </div>
             <p style={{ marginTop: 16, fontStyle: "italic" }}>"I'd rather invest 10 hours in a difficult conversation than give up on a King or Queen."</p>
+            <p style={{ marginTop: 16 }}><strong>Note:</strong> Disciplinary infractions may also result in automatic financial deductions from the student's Krown Credit Union (KCU) account.</p>
           </div>
 
           <div style={{ marginBottom: 48 }}>
